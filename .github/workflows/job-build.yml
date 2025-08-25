@@ -1,0 +1,45 @@
+name: job-build
+run-name: "[job-build] ${{ inputs.branch }}"
+
+on:
+  workflow_call:
+    inputs:
+      branch:
+        description: 'Branch to checkout'
+        required: true
+        type: string
+    secrets:
+      KEY_SSH:
+        required: true
+
+jobs:
+  check-build:
+    name: Build Package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify required secrets
+        run: |
+          echo "🔍 Verifying required secrets for build job..."
+          if [ -z "${{ secrets.KEY_SSH }}" ]; then
+            echo "❌ KEY_SSH secret is missing"
+            exit 1
+          fi
+          echo "✅ All required secrets are present"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+          fetch-depth: 0
+          ssh-key: ${{ secrets.KEY_SSH }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install Dependencies
+        run: bun install
+
+      - name: Run Build
+        run: bun run build

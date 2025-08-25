@@ -1,0 +1,21 @@
+# === Build and distribution directories ===
+build/Release
+dist
+coverage
+docs/
+
+# === Package dependencies and artifacts ===
+node_modules/
+*.tgz
+*.lcov
+
+# === Environment configuration files ===
+.env
+.env.development
+.env.local
+.env.production
+.env.test
+
+# === IDE/editor files and directories ===
+.idea
+.vscode

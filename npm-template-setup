@@ -1,0 +1,403 @@
+#!/bin/bash
+
+# Show help
+show_help() {
+	echo -e "\033[1;34m📦 Package Setup Script\033[0m"
+	echo "Interactive script to configure npm package template"
+	echo
+	echo "Usage: $0 [OPTIONS]"
+	echo
+	echo "Options:"
+	echo "  --dry-run    Preview changes without modifying files"
+	echo "  --help, -h   Show this help message"
+	echo
+	echo "This script will prompt you for:"
+	echo "  • Package name"
+	echo "  • Description"
+	echo "  • Author name"
+	echo "  • License holder"
+	echo "  • Contact email"
+	echo "  • Repository URL"
+	echo "  • Keywords"
+	echo
+	exit 0
+}
+
+# Check for help or dry-run mode
+DRY_RUN=false
+if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+	show_help
+elif [[ "$1" == "--dry-run" ]]; then
+	DRY_RUN=true
+	echo -e "\033[1;33m🔍 DRY RUN MODE - No files will be modified\033[0m"
+	echo
+fi
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Utility function for executing commands with dry-run support
+execute_command() {
+	local cmd="$1"
+	if [[ "$DRY_RUN" == "true" ]]; then
+		echo -e "${YELLOW}[DRY RUN] Would execute: $cmd${NC}"
+	else
+		eval "$cmd"
+	fi
+}
+
+# Display script header
+show_header() {
+	echo -e "${BLUE}📦 Package Setup Script${NC}"
+	echo -e "${BLUE}========================${NC}"
+	echo
+}
+
+# Get package name with validation
+get_package_name() {
+	while true; do
+		read -p "$(echo -e "${YELLOW}Package name:${NC} ")" PACKAGE_NAME
+		if [[ -n "$PACKAGE_NAME" ]]; then
+			break
+		else
+			echo -e "${RED}Package name cannot be empty!${NC}"
+		fi
+	done
+}
+
+# Get package description
+get_package_description() {
+	read -p "$(echo -e "${YELLOW}Description (optional):${NC} ")" PACKAGE_DESCRIPTION
+	if [[ -z "$PACKAGE_DESCRIPTION" ]]; then
+		echo -e "${BLUE}ℹ No description provided${NC}"
+	fi
+}
+
+# Get author name
+get_author_name() {
+	while true; do
+		read -p "$(echo -e "${YELLOW}Author name:${NC} ")" AUTHOR_NAME
+		if [[ -z "$AUTHOR_NAME" ]]; then
+			echo -e "${RED}✗ Author name cannot be empty!${NC}"
+		else
+			echo -e "${GREEN}✓ Author name set${NC}"
+			break
+		fi
+	done
+}
+
+# Get license holder name with default fallback
+get_license_holder() {
+	read -p "$(echo -e "${YELLOW}License holder name (default: ${AUTHOR_NAME}):${NC} ")" LICENSE_HOLDER
+	if [[ -z "$LICENSE_HOLDER" ]]; then
+		LICENSE_HOLDER="$AUTHOR_NAME"
+	fi
+}
+
+# Get contact email for all project files
+get_contact_email() {
+	while true; do
+		read -p "$(echo -e "${YELLOW}Contact email:${NC} ")" CONTACT_EMAIL
+		if [[ -z "$CONTACT_EMAIL" ]]; then
+			echo -e "${RED}✗ Email cannot be empty!${NC}"
+		elif [[ "$CONTACT_EMAIL" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+			echo -e "${GREEN}✓ Valid email format${NC}"
+			break
+		else
+			echo -e "${RED}✗ Invalid email format. Please enter a valid email address.${NC}"
+		fi
+	done
+}
+
+# Get repository URL
+get_repository_url() {
+	# Try to detect from git remote first
+	local detected_url=""
+	if command -v git &> /dev/null && git remote get-url origin &> /dev/null; then
+		detected_url=$(git remote get-url origin | sed 's/\.git$//' | sed 's/git@github\.com:/https:\/\/github.com\//')
+	fi
+	
+	while true; do
+		if [[ -n "$detected_url" ]]; then
+			read -p "$(echo -e "${YELLOW}Repository URL (detected: ${detected_url}, press Enter to use):${NC} ")" REPO_URL
+			if [[ -z "$REPO_URL" ]]; then
+				REPO_URL="$detected_url"
+			fi
+		else
+			read -p "$(echo -e "${YELLOW}Repository URL (optional, e.g., https://github.com/username/repo):${NC} ")" REPO_URL
+		fi
+		
+		if [[ -z "$REPO_URL" ]]; then
+			echo -e "${BLUE}ℹ No repository URL provided - skipping repository updates${NC}"
+			break
+		elif [[ "$REPO_URL" =~ ^https://github\.com/[^/]+/[^/]+/?$ ]]; then
+			echo -e "${GREEN}✓ Valid GitHub repository URL${NC}"
+			break
+		else
+			echo -e "${RED}✗ Invalid repository URL. Please enter a valid GitHub URL (https://github.com/username/repo)${NC}"
+			detected_url=""  # Don't show detected URL again after first invalid attempt
+		fi
+	done
+}
+
+# Get and process keywords
+get_keywords() {
+	echo -e "${YELLOW}Keywords (comma-separated):${NC}"
+	read -p "> " KEYWORDS_INPUT
+	process_keywords
+}
+
+# Convert keywords to JSON array format
+process_keywords() {
+	if [[ -n "$KEYWORDS_INPUT" ]]; then
+		# Convert comma-separated keywords to JSON array format
+		IFS=',' read -ra KEYWORDS_ARRAY <<< "$KEYWORDS_INPUT"
+		KEYWORDS_JSON="["
+		for i in "${!KEYWORDS_ARRAY[@]}"; do
+			keyword=$(echo "${KEYWORDS_ARRAY[$i]}" | xargs) # trim whitespace
+			if [[ $i -eq 0 ]]; then
+				KEYWORDS_JSON+="\"$keyword\""
+			else
+				KEYWORDS_JSON+=",\"$keyword\""
+			fi
+		done
+		KEYWORDS_JSON+="]"
+	else
+		KEYWORDS_JSON='["pkg"]'
+	fi
+}
+
+# Update package.json using jq or sed fallback
+update_package_json() {
+	echo -e "\n${BLUE}Updating package.json...${NC}"
+
+	# Use jq if available, otherwise use sed
+	if command -v jq &> /dev/null; then
+		update_package_json_with_jq
+	else
+		update_package_json_with_sed
+	fi
+	
+	if [[ "$?" -eq 0 ]]; then
+		echo -e "${GREEN}✓ package.json updated successfully${NC}"
+	else
+		echo -e "${RED}✗ Error updating package.json${NC}"
+		exit 1
+	fi
+}
+
+# Update package.json using jq
+update_package_json_with_jq() {
+	local repo_obj="null"
+	if [[ -n "$REPO_URL" ]]; then
+		repo_obj="{\"type\": \"git\", \"url\": \"$REPO_URL.git\"}"
+	fi
+	
+	if [[ "$DRY_RUN" == "true" ]]; then
+		echo -e "${YELLOW}[DRY RUN] Would execute jq to update package.json${NC}"
+	else
+		jq --tab \
+		   --arg name "$PACKAGE_NAME" \
+		   --arg desc "$PACKAGE_DESCRIPTION" \
+		   --arg author "$AUTHOR_NAME" \
+		   --argjson keywords "$KEYWORDS_JSON" \
+		   --argjson repository "$repo_obj" \
+		   '.name = $name | (if $desc != "" then .description = $desc else . end) | .author = $author | .keywords = $keywords | if $repository != null then .repository = $repository else . end' \
+		   package.json > package.json.tmp && mv package.json.tmp package.json
+	fi
+}
+
+# Update package.json using sed
+update_package_json_with_sed() {
+	sed -i "s/\"name\": \".*\"/\"name\": \"$PACKAGE_NAME\"/" package.json
+	if [[ -n "$PACKAGE_DESCRIPTION" ]]; then
+		sed -i "s/\"description\": \".*\"/\"description\": \"$PACKAGE_DESCRIPTION\"/" package.json
+	fi
+	sed -i "s/\"author\": \".*\"/\"author\": \"$AUTHOR_NAME\"/" package.json
+	# For keywords, we'll need a more complex approach with sed
+	sed -i "/\"keywords\": \[/,/\]/ { /\"keywords\": \[/!{ /\]/!d; }; }" package.json
+	sed -i "s/\"keywords\": \[.*\]/\"keywords\": $KEYWORDS_JSON/" package.json
+	
+	# Add repository URL if provided
+	if [[ -n "$REPO_URL" ]]; then
+		# Check if repository field exists
+		if grep -q '"repository"' package.json; then
+			if ! execute_command "sed -i \"s|\\\"repository\\\": \\\".*\\\"|\\\"repository\\\": {\\\"type\\\": \\\"git\\\", \\\"url\\\": \\\"$REPO_URL.git\\\"}|\" package.json"; then
+				echo -e "${RED}✗ Error updating repository in package.json${NC}"
+				exit 1
+			fi
+		else
+			# Add repository field after author
+			if ! execute_command "sed -i \"/\\\"author\\\": \\\".*\\\"/a\\\\\\t\\\"repository\\\": {\\\"type\\\": \\\"git\\\", \\\"url\\\": \\\"$REPO_URL.git\\\"},\" package.json"; then
+				echo -e "${RED}✗ Error adding repository to package.json${NC}"
+				exit 1
+			fi
+		fi
+	fi
+}
+
+# Update LICENSE file if it exists
+update_license_file() {
+	if [[ -f "LICENSE.md" ]]; then
+		echo -e "${BLUE}Updating LICENSE.md file...${NC}"
+		CURRENT_YEAR=$(date +%Y)
+		if [[ "$DRY_RUN" == "true" ]]; then
+			echo -e "${YELLOW}[DRY RUN] Would execute: sed -i \"s/Copyright (c) [0-9]\\{4\\} .*/Copyright (c) $CURRENT_YEAR $LICENSE_HOLDER/\" LICENSE.md${NC}"
+		else
+			if ! sed -i "s/Copyright (c) [0-9]\\{4\\} .*/Copyright (c) $CURRENT_YEAR $LICENSE_HOLDER/" LICENSE.md; then
+				echo -e "${RED}✗ Error updating copyright in LICENSE.md${NC}"
+				exit 1
+			fi
+		fi
+		if [[ "$DRY_RUN" == "true" ]]; then
+			echo -e "${YELLOW}[DRY RUN] Would execute: sed -i \"s|\\[Project Name\\]|$PACKAGE_NAME|g\" LICENSE.md${NC}"
+		else
+			if ! sed -i "s|\\[Project Name\\]|$PACKAGE_NAME|g" LICENSE.md; then
+				echo -e "${RED}✗ Error updating project name in LICENSE.md${NC}"
+				exit 1
+			fi
+		fi
+		echo -e "${GREEN}✓ LICENSE.md updated successfully${NC}"
+	elif [[ -f "LICENSE" ]]; then
+		echo -e "${BLUE}Updating LICENSE file...${NC}"
+		CURRENT_YEAR=$(date +%Y)
+		if [[ "$DRY_RUN" == "true" ]]; then
+			echo -e "${YELLOW}[DRY RUN] Would execute: sed -i \"s/Copyright (c) [0-9]\\{4\\} .*/Copyright (c) $CURRENT_YEAR $LICENSE_HOLDER/\" LICENSE${NC}"
+		else
+			if ! sed -i "s/Copyright (c) [0-9]\\{4\\} .*/Copyright (c) $CURRENT_YEAR $LICENSE_HOLDER/" LICENSE; then
+				echo -e "${RED}✗ Error updating copyright in LICENSE${NC}"
+				exit 1
+			fi
+		fi
+		if [[ "$DRY_RUN" == "true" ]]; then
+			echo -e "${YELLOW}[DRY RUN] Would execute: sed -i \"s|\\[Project Name\\]|$PACKAGE_NAME|g\" LICENSE${NC}"
+		else
+			if ! sed -i "s|\\[Project Name\\]|$PACKAGE_NAME|g" LICENSE; then
+				echo -e "${RED}✗ Error updating project name in LICENSE${NC}"
+				exit 1
+			fi
+		fi
+		echo -e "${GREEN}✓ LICENSE updated successfully${NC}"
+	fi
+}
+
+# Update CODE_OF_CONDUCT.md file if it exists
+update_code_of_conduct() {
+	if [[ -f "CODE_OF_CONDUCT.md" && -n "$CONTACT_EMAIL" ]]; then
+		echo -e "${BLUE}Updating CODE_OF_CONDUCT.md file...${NC}"
+		sed -i "s/\[conduct@example\.com\](mailto:conduct@example\.com)/[$CONTACT_EMAIL](mailto:$CONTACT_EMAIL)/g" CODE_OF_CONDUCT.md
+	fi
+}
+
+# Update CONTRIBUTING.md file if it exists
+update_contributing() {
+	if [[ -f "CONTRIBUTING.md" ]]; then
+		echo -e "${BLUE}Updating CONTRIBUTING.md file...${NC}"
+		if [[ -n "$CONTACT_EMAIL" ]]; then
+			sed -i "s/komiriko@pm\.me/$CONTACT_EMAIL/g" CONTRIBUTING.md
+		fi
+		if [[ -n "$REPO_URL" ]]; then
+			sed -i "s|https://github\.com/Komiriko/template-package-npm|$REPO_URL|g" CONTRIBUTING.md
+			sed -i "s|https://github\.com/YOUR_USERNAME/template-package-npm|$REPO_URL|g" CONTRIBUTING.md
+		fi
+	fi
+}
+
+# Update README.md file if it exists
+update_readme() {
+	if [[ -f "README.md" ]]; then
+		echo -e "${BLUE}Updating README.md file...${NC}"
+		if [[ -n "$CONTACT_EMAIL" ]]; then
+			sed -i "s/your-email@domain\.com/$CONTACT_EMAIL/g" README.md
+			sed -i "s/your_email@domain\.ext/$CONTACT_EMAIL/g" README.md
+		fi
+		if [[ -n "$REPO_URL" ]]; then
+			sed -i "s|https://github\.com/your-username/your-repo|$REPO_URL|g" README.md
+		fi
+		if [[ -n "$PACKAGE_NAME" ]]; then
+			sed -i "s|@your-scope/your-package-name|$PACKAGE_NAME|g" README.md
+			sed -i "s|your-package-name|$PACKAGE_NAME|g" README.md
+			sed -i "s|template-package-npm|$PACKAGE_NAME|g" README.md
+		fi
+	fi
+}
+
+# Update GitHub issue template config if it exists
+update_github_config() {
+	if [[ -f ".github/ISSUE_TEMPLATE/config.yml" && -n "$CONTACT_EMAIL" ]]; then
+		echo -e "${BLUE}Updating GitHub issue template config...${NC}"
+		sed -i "s/komiriko@pm\.me/$CONTACT_EMAIL/g" .github/ISSUE_TEMPLATE/config.yml
+	fi
+}
+
+# Update SECURITY.md file if it exists
+update_security() {
+	if [[ -f "SECURITY.md" ]]; then
+		echo -e "${BLUE}Updating SECURITY.md file...${NC}"
+		if [[ -n "$CONTACT_EMAIL" ]]; then
+			sed -i "s/your-email@domain\.com/$CONTACT_EMAIL/g" SECURITY.md
+		fi
+		if [[ -n "$REPO_URL" ]]; then
+			sed -i "s|https://github\.com/your-username/your-repo|$REPO_URL|g" SECURITY.md
+		fi
+	fi
+}
+
+# Display final results
+show_results() {
+	echo -e "${GREEN}✅ Package configuration updated successfully!${NC}"
+	echo
+	echo -e "${BLUE}Updated values:${NC}"
+	echo -e "  📦 Name: ${GREEN}$PACKAGE_NAME${NC}"
+	echo -e "  📝 Description: ${GREEN}$PACKAGE_DESCRIPTION${NC}"
+	echo -e "  👤 Author: ${GREEN}$AUTHOR_NAME${NC}"
+	echo -e "  📄 License holder: ${GREEN}$LICENSE_HOLDER${NC}"
+	echo -e "  🏷️ Keywords: ${GREEN}$KEYWORDS_JSON${NC}"
+	if [[ -n "$CONTACT_EMAIL" ]]; then
+		echo -e "  📧 Contact email: ${GREEN}$CONTACT_EMAIL${NC}"
+	fi
+	if [[ -n "$REPO_URL" ]]; then
+		echo -e "  🔗 Repository URL: ${GREEN}$REPO_URL${NC}"
+	fi
+}
+
+# Main execution flow
+main() {
+	show_header
+	get_package_name
+	get_package_description
+	get_author_name
+	get_license_holder
+	get_contact_email
+	get_repository_url
+	get_keywords
+	
+	if [[ "$DRY_RUN" == "true" ]]; then
+		echo -e "${YELLOW}📋 Would update the following files:${NC}"
+		[[ -f "package.json" ]] && echo -e "  - package.json"
+		[[ -f "LICENSE.md" ]] && echo -e "  - LICENSE.md"
+		[[ -f "LICENSE" ]] && echo -e "  - LICENSE"
+		[[ -f "CODE_OF_CONDUCT.md" ]] && echo -e "  - CODE_OF_CONDUCT.md"
+		[[ -f "CONTRIBUTING.md" ]] && echo -e "  - CONTRIBUTING.md"
+		[[ -f "README.md" ]] && echo -e "  - README.md"
+		[[ -f "SECURITY.md" ]] && echo -e "  - SECURITY.md"
+		[[ -f ".github/ISSUE_TEMPLATE/config.yml" ]] && echo -e "  - .github/ISSUE_TEMPLATE/config.yml"
+		echo
+	fi
+	
+	update_package_json
+	update_license_file
+	update_code_of_conduct
+	update_contributing
+	update_readme
+	update_github_config
+	update_security
+	show_results
+}
+
+# Run the script
+main

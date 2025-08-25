@@ -1,0 +1,193 @@
+name: job-create-github-release
+run-name: "[job-create-github-release] ${{ inputs.branch }} - ${{ inputs.versionSuffix || 'stable' }} - ${{ inputs.isPrerelease }}"
+
+on:
+  workflow_call:
+    inputs:
+      branch:
+        description: 'Branch to checkout'
+        required: true
+        type: string
+      versionSuffix:
+        description: 'Suffix for the version/tag (e.g. canary-20250505-xxxx, or empty for stable)'
+        required: false
+        type: string
+      isPrerelease:
+        description: 'Is this a prerelease? (true/false)'
+        required: true
+        type: string
+    secrets:
+      KEY_SSH:
+        required: true
+      KEY_GPG:
+        required: true
+      GIT_EMAIL:
+        required: true
+      GH_TOKEN:
+        required: true
+    outputs:
+      tag:
+        value: ${{ jobs.create-release.outputs.tag }}
+        description: 'The tag name of the release'
+      changelog:
+        value: ${{ jobs.create-release.outputs.changelog }}
+        description: 'The changelog generated for the release'
+      isPrerelease:
+        value: ${{ jobs.create-release.outputs.isPrerelease }}
+        description: 'Indicates if the release is a prerelease or not'
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.latest_tag.outputs.tag_name }}
+      changelog: ${{ steps.changelog_diff.outputs.changelog }}
+      isPrerelease: ${{ inputs.isPrerelease }}
+    steps:
+      - name: Verify required secrets
+        run: |
+          echo "🔍 Verifying required secrets..."
+          if [ -z "${{ secrets.KEY_SSH }}" ]; then
+            echo "❌ KEY_SSH secret is missing"
+            exit 1
+          fi
+          if [ -z "${{ secrets.KEY_GPG }}" ]; then
+            echo "❌ KEY_GPG secret is missing"
+            exit 1
+          fi
+          if [ -z "${{ secrets.GIT_EMAIL }}" ]; then
+            echo "❌ GIT_EMAIL secret is missing"
+            exit 1
+          fi
+          if [ -z "${{ secrets.GH_TOKEN }}" ]; then
+            echo "❌ GH_TOKEN secret is missing"
+            exit 1
+          fi
+          echo "✅ All required secrets are present"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+          fetch-depth: 0
+          ssh-key: ${{ secrets.KEY_SSH }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Fetch tags
+        run: git fetch --tags --prune
+
+      - name: Import GPG key and Configure Git
+        run: |
+          echo "${{ secrets.KEY_GPG }}" | gpg --batch --import
+          git config --local user.signingkey "$(gpg --list-keys --with-colons | grep '^pub' | cut -d':' -f5 | head -n1)"
+          git config --local commit.gpgsign true
+          git config --local tag.gpgsign true
+          git config --local user.email "${{ secrets.GIT_EMAIL }}"
+          git config --local user.name "github-actions"
+
+      - name: Compute previous tag (for changelog)
+        id: prev_tag
+        run: |
+          LAST=$(git tag --list 'v[0-9]*' --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+' | head -n1)
+          echo "last_tag=$LAST" >> $GITHUB_OUTPUT
+
+      - name: Generate Changelog and bump version
+        run: |
+          if [ -n "${{ steps.prev_tag.outputs.last_tag }}" ]; then
+            if [ -n "${{ inputs.versionSuffix }}" ]; then
+              bunx changelogen@latest --from ${{ steps.prev_tag.outputs.last_tag }} --bump --versionSuffix "${{ inputs.versionSuffix }}" --release
+            else
+              bunx changelogen@latest --from ${{ steps.prev_tag.outputs.last_tag }} --bump --release
+            fi
+          else
+            if [ -n "${{ inputs.versionSuffix }}" ]; then
+              bunx changelogen@latest --bump --versionSuffix "${{ inputs.versionSuffix }}" --release
+            else
+              bunx changelogen@latest --bump --release
+            fi
+          fi
+
+
+      - name: Sign the tag manually
+        run: |
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          if [ -z "$LATEST_TAG" ]; then
+            echo "No tags found, skipping signing step."
+            exit 0
+          fi
+          echo "Signing tag: $LATEST_TAG"
+          git tag -s "$LATEST_TAG" -m "Signed Release $LATEST_TAG" --force
+
+
+      - name: Push generated tag
+        run: git push origin HEAD:${{ inputs.branch }} --tags
+
+      - name: Verify tag signature
+        run: |
+          LATEST_TAG=$(git describe --tags --abbrev=0)
+          git tag -v "$LATEST_TAG"
+
+      - name: Extract latest tag
+        id: latest_tag
+        run: echo "tag_name=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
+
+      - name: Validate tag format
+        run: |
+          TAG="${{ steps.latest_tag.outputs.tag_name }}"
+          echo "🔍 Validating tag format: $TAG"
+          if ! echo "$TAG" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+'; then
+            echo "❌ Tag format is invalid: $TAG (expected format: v1.2.3)"
+            exit 1
+          fi
+          echo "✅ Tag format is valid: $TAG"
+
+      - name: Extract Changelog additions
+        id: changelog_diff
+        run: |
+          PREV_COMMIT=$(git log -1 --pretty=%P | awk '{print $1}')
+          git diff ${PREV_COMMIT} HEAD --unified=0 CHANGELOG.md | grep '^+' | grep -v '++' | sed 's/^+//' > temp.md
+          echo "Changelog additions between previous and current commit:"
+          cat temp.md
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          echo "Using tag: ${{ steps.latest_tag.outputs.tag_name }}"
+          if [ "${{ inputs.isPrerelease }}" = "true" ]; then
+            gh release create "${{ steps.latest_tag.outputs.tag_name }}" \
+              --title "Release ${{ steps.latest_tag.outputs.tag_name }}" \
+              --notes "$(cat temp.md)" \
+              --prerelease \
+              --latest
+          else
+            gh release create "${{ steps.latest_tag.outputs.tag_name }}" \
+              --title "Release ${{ steps.latest_tag.outputs.tag_name }}" \
+              --notes "$(cat temp.md)" \
+              --latest
+          fi
+
+      - name: Final Summary
+        run: |
+          tag="${{ steps.latest_tag.outputs.tag_name }}"
+          url="https://github.com/${{ github.repository }}/releases/tag/${{ steps.latest_tag.outputs.tag_name }}"
+          # Vérifie la signature GPG du tag
+          if git tag -v "$tag" 2>&1 | grep -q 'Good signature'; then
+            signature="🔒 Signed (GPG verified)"
+          else
+            signature="❌ Not signed or invalid signature"
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🚀 GitHub Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Tag | Release Link | Signature |" >> $GITHUB_STEP_SUMMARY
+          echo "|:----|:-------------|:----------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🏷️ $tag | [View Release]($url) | $signature |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Release created successfully." >> $GITHUB_STEP_SUMMARY

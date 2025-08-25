@@ -1,0 +1,5 @@
+telemetry = false
+
+[test]
+root = "./test"
+coverageThreshold = { line = 0.7, function = 0.8, statement = 0.9 }

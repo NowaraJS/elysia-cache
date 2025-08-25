@@ -1,0 +1,88 @@
+{
+	"name": "template-package-npm",
+	"version": "1.0.0",
+	"author": "Komiriko",
+	"description": "A template to create a bun package.",
+	"type": "module",
+	"license": "MIT",
+	"keywords": [
+		"pkg"
+	],
+	"scripts": {
+		"build": "bun builder.ts",
+		"dev": "bun --watch sandbox/index.ts",
+		"docs": "bunx typedoc --tsconfig tsconfig.build.json",
+		"fix-lint": "eslint --fix ./source",
+		"lint": "eslint ./source",
+		"test:integration": "bun test $(find test/integration -name '*.spec.ts')",
+		"test:unit": "bun test --coverage $(find test/unit -name '*.spec.ts')",
+		"test": "bun test --coverage"
+	},
+	"devDependencies": {
+		"@eslint/js": "^9.34.0",
+		"@stylistic/eslint-plugin": "^5.2.3",
+		"@types/bun": "^1.2.20",
+		"eslint": "^9.34.0",
+		"globals": "^16.3.0",
+		"typescript-eslint": "^8.40.0",
+		"typescript": "^5.9.2"
+	},
+	"exports": {
+		"./enums": "./dist/enums/index.js",
+		"./types": "./dist/types/index.js",
+		"./utils": "./dist/utils/index.js",
+		".": "./dist/index.js"
+	},
+	"changelog": {
+		"types": {
+			"feat": {
+				"title": "🚀 Enhancements",
+				"semver": "minor"
+			},
+			"perf": {
+				"title": "⚡ Performance",
+				"semver": "patch"
+			},
+			"fix": {
+				"title": "🔧 Fixes",
+				"semver": "patch"
+			},
+			"refactor": {
+				"title": "🧹 Refactors",
+				"semver": "patch"
+			},
+			"docs": {
+				"title": "📖 Documentation",
+				"semver": "patch"
+			},
+			"build": {
+				"title": "📦 Build",
+				"semver": "patch"
+			},
+			"types": {
+				"title": "🌊 Types",
+				"semver": "patch"
+			},
+			"chore": {
+				"title": "🦉 Chore"
+			},
+			"examples": {
+				"title": "🏀 Examples"
+			},
+			"test": {
+				"title": "🧪 Tests"
+			},
+			"style": {
+				"title": "🎨 Styles"
+			},
+			"ci": {
+				"title": "🤖 CI"
+			}
+		},
+		"templates": {
+			"commitMessage": "chore(🦉): v{{newVersion}}",
+			"tagMessage": "v{{newVersion}}",
+			"tagBody": "v{{newVersion}}"
+		}
+	}
+}

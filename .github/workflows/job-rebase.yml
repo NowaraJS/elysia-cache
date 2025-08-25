@@ -1,0 +1,65 @@
+name: job-rebase
+run-name: "[job-rebase] ${{ inputs.from }} -> ${{ inputs.to }}"
+
+on:
+  workflow_call:
+    inputs:
+      from:
+        description: 'Branch to rebase from'
+        required: true
+        type: string
+      to:
+        description: 'Branch to rebase to'
+        required: true
+        type: string
+    secrets:
+      KEY_SSH:
+        required: true
+      GIT_EMAIL:
+        required: true
+  workflow_dispatch:
+    inputs:
+      from:
+        description: 'Branch to rebase from'
+        required: true
+        type: string
+      to:
+        description: 'Branch to rebase to'
+        required: true
+        type: string
+
+jobs:
+  rebase-branches:
+    name: Rebase Branches
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify required secrets
+        run: |
+          echo "🔍 Verifying required secrets for rebase job..."
+          if [ -z "${{ secrets.KEY_SSH }}" ]; then
+            echo "❌ KEY_SSH secret is missing"
+            exit 1
+          fi
+          if [ -z "${{ secrets.GIT_EMAIL }}" ]; then
+            echo "❌ GIT_EMAIL secret is missing"
+            exit 1
+          fi
+          echo "✅ All required secrets are present"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.from }}
+          fetch-depth: 0
+          ssh-key: ${{ secrets.KEY_SSH }}
+
+      - name: Fetch all branches
+        run: git fetch origin '+refs/heads/*:refs/remotes/origin/*'
+
+      - name: Rebase
+        run: |
+          git config user.name "GitHub Action"
+          git config user.email "${{ secrets.GIT_EMAIL }}"
+          git checkout ${{ inputs.from }}
+          git rebase origin/${{ inputs.to }}
+          git push origin ${{ inputs.from }}

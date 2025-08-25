@@ -1,0 +1,15 @@
+{
+	"extends": "./tsconfig.json",
+	"typedocOptions": {
+		"out": "docs",
+		"hideGenerator": true,
+		"customFooterHtml": "<p>Generated with ❤️</p>"
+	},
+	"include": ["source/**/index.ts"],
+	"compilerOptions": {
+		// —————————————— Emit —————————————— //
+		"noEmit": false,
+		"emitDeclarationOnly": true,
+		"declaration": true
+	}
+}

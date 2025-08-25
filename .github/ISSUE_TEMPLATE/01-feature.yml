@@ -1,0 +1,43 @@
+name: 🚀 Feature Request
+title: "[FEATURE]: "
+description: Suggest an idea, improvement, or enhancement
+labels: ["needs triage", "enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # 👋 Thank you for suggesting a feature!
+
+        Your feedback helps us improve the project for everyone. Please provide as much detail as possible to help us understand your idea.
+  - type: checkboxes
+    attributes:
+      label: Have you checked for existing feature requests?
+      description: |
+        Before submitting, please check if this feature has already been requested. If it has, add a 👍 to the existing issue instead of creating a new one.
+      options:
+        - label: "Yes, I have checked and this feature has not been requested yet."
+          required: true
+  - type: textarea
+    attributes:
+      label: 🎉 Problem or Need
+      description: Clearly describe the problem or need that this feature would address. What is currently missing or frustrating?
+      placeholder: "E.g. Users currently have no way to summon chocolate on demand, which is frustrating during long dev sessions."
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: ✨ Proposed Solution
+      description: Describe your proposed solution. Be as clear and specific as possible.
+      placeholder: "It would be awesome if we could [...]"
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 🔍 Alternatives Considered
+      description: Have you considered alternative solutions or approaches? Please mention them here.
+      placeholder: "I also thought about doing [...] instead."
+  - type: textarea
+    attributes:
+      label: 📎 Additional Context / Mockups
+      description: Add any relevant screenshots, links, or context that might help us better understand your suggestion.
+      placeholder: "Here’s a mockup of what I’m thinking..."

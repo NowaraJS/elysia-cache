@@ -1,0 +1,67 @@
+name: 🐞 Bug Report
+title: "[BUG]: "
+description: Report a bug or unexpected behavior
+labels: ["needs triage", "bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # 👋 Thank you for taking the time to report a bug 🐞!
+
+        Please provide as much detail as possible to help us understand and resolve the issue quickly.
+  - type: checkboxes
+    attributes:
+      label: Have you checked for existing issues?
+      description: |
+        Before submitting, please check if this bug has already been reported. If it has, add a 👍 to the existing issue instead of creating a new one.
+      options:
+        - label: "Yes, I have checked and this bug has not been reported yet."
+          required: true
+  - type: textarea
+    attributes:
+      label: 🐛 Bug Description & Steps to Reproduce
+      description: |
+        Clearly describe the bug and provide step-by-step instructions to reproduce it.
+        - What did you do?
+        - What happened?
+        - What did you expect to happen?
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. See error '...'
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 🧐 Expected Behavior
+      description: Describe what you expected to happen instead of the bug.
+      placeholder: "E.g. The form should be submitted and a confirmation should appear."
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 📝 Actual Behavior
+      description: Describe what actually happened. Include error messages or logs if possible.
+      placeholder: "E.g. Nothing happens and no confirmation appears."
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 💻 System Information
+      description: |
+        Please provide details about your environment.
+        - OS and version (e.g. Linux, macOS, Windows)
+        - Any other relevant details
+        For MacOS/Linux: `uname -mprs`
+        For Windows: `"$([Environment]::OSVersion | ForEach-Object VersionString) $(if ([Environment]::Is64BitOperatingSystem) { "x64" } else { "x86" })"`
+      placeholder: |
+        OS: Linux 6.14.4-2-cachyos x86_64 unknown
+        Node.js: v18.16.0
+        Browser: Firefox 125.0
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 📎 Additional Context / Screenshots
+      description: Add any other information, logs, or screenshots that might help us understand or fix the bug.
+      placeholder: "Here is a screenshot of the issue..."

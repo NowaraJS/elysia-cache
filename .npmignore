@@ -1,0 +1,35 @@
+# === Configuration and system files ===
+.github/
+.idea/
+.env*
+.nvmrc
+.vscode/
+
+# === Archives and build-related files ===
+*.tgz
+
+# === Bundler configuration files ===
+builder.ts
+CHANGELOG.md
+
+# === Documentation-related folders ===
+coverage/
+docs/
+
+# === Tool configuration files ===
+eslint.config.js
+
+# === Dependency-related folders and files ===
+node_modules/
+bun.lock
+
+# === Project-specific folders ===
+source/
+test/
+sandbox/
+
+# === Core project files ===
+README.md
+tsconfig.json
+tsconfig.build.json
+bunfig.toml

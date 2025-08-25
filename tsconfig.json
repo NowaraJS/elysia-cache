@@ -1,0 +1,48 @@
+{
+	"compilerOptions": {
+		// ———————————— Type Checking ———————————— //
+		"strict": true,
+		"allowUnreachableCode": false,
+		"allowUnusedLabels": false,
+		"alwaysStrict": true, // because of `strict`
+		"exactOptionalPropertyTypes": true,
+		"noFallthroughCasesInSwitch": true,
+		"noImplicitAny": true, // because of `strict`
+		"noImplicitOverride": true,
+		"noImplicitReturns": true,
+		"noImplicitThis": true, // because of `strict`
+		"noPropertyAccessFromIndexSignature": false,
+		"noUncheckedIndexedAccess": false,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		// —————————————— Modules —————————————— //
+		"allowArbitraryExtensions": true,
+		"allowImportingTsExtensions": true, // This flag is only allowed when --noEmit or --emitDeclarationOnly is enabled
+		"module": "Preserve",
+		"moduleResolution": "bundler",
+		"moduleDetection": "force",
+		"noUncheckedSideEffectImports": true,
+		"paths": {
+			"#/*": ["./source/*"],
+			"#/root/*": ["./*"],
+		},
+		"resolveJsonModule": true,
+		// —————————————— Emit —————————————— //
+		"outDir": "./dist",
+		"noEmit": true,
+		"removeComments": false,
+		// ——————— Javascript Support ——————— //
+		"allowJs": true,
+		"checkJs": true,
+		// ——————— Interop Constraints ——————— //
+		"allowSyntheticDefaultImports": true, // true if moduleResolution is bundler
+		"erasableSyntaxOnly": true,
+		"esModuleInterop": false,
+		"forceConsistentCasingInFileNames": true,
+		"verbatimModuleSyntax": true,
+		"lib": ["ESNext"],
+		"target": "ESNext",
+		// ——————————— Completeness ——————————— //
+		"skipLibCheck": true
+	}
+}

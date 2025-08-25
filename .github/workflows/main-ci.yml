@@ -1,0 +1,53 @@
+name: main-ci
+run-name: "[main-ci] Checker run for \"${{ github.head_ref || github.ref_name }}\" by \"${{ github.actor }}\""
+
+on:
+  pull_request:
+    branches:
+      - '*'
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      branch:
+        description: 'Branch to checkout'
+        required: false
+        type: string
+
+# Secrets used in the workflow
+# KEY_SSH: SSH key to access the repository (used with deploy keys)
+# KEY_GPG: GPG key to sign commits or tags
+# GIT_EMAIL: Email address used for git commits
+
+jobs:
+  lint:
+    uses: ./.github/workflows/job-lint.yml
+    with:
+      branch: ${{ inputs.branch || github.head_ref || github.ref_name }}
+    secrets:
+      KEY_SSH: ${{ secrets.KEY_SSH }}
+      KEY_GPG: ${{ secrets.KEY_GPG }}
+      GIT_EMAIL: ${{ secrets.GIT_EMAIL }}
+
+  build:
+    needs: lint
+    uses: ./.github/workflows/job-build.yml
+    with:
+      branch: ${{ inputs.branch || github.head_ref || github.ref_name }}
+    secrets:
+      KEY_SSH: ${{ secrets.KEY_SSH }}
+
+  unit-test:
+    needs: build
+    uses: ./.github/workflows/job-unit-test.yml
+    with:
+      branch: ${{ inputs.branch || github.head_ref || github.ref_name }}
+    secrets:
+      KEY_SSH: ${{ secrets.KEY_SSH }}
+
+  integration-test:
+    needs: build
+    uses: ./.github/workflows/job-integration-test.yml
+    with:
+      branch: ${{ inputs.branch || github.head_ref || github.ref_name }}
+    secrets:
+      KEY_SSH: ${{ secrets.KEY_SSH }}

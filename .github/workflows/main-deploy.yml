@@ -1,0 +1,188 @@
+name: main-deploy
+run-name: "[main-deploy] - Deploy to \"${{ github.ref_name }}\" by \"${{ github.actor }}\""
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      isPrerelease:
+        description: 'Is this a prerelease?'
+        required: false
+        default: true
+        type: boolean
+      versionSuffix:
+        description: 'Suffix for prerelease (e.g. canary-xxxx, empty for stable)'
+        required: false
+        type: string
+      rebaseDevToMain:
+        description: 'Rebase develop to main (default: true if merge in main)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  DEFAULT_BRANCH: main
+
+jobs:
+  detect-context:
+    if: |
+      (github.event_name == 'push' && (
+        contains(github.event.head_commit.message, 'Merge') ||
+        contains(github.event.head_commit.message, 'merge')
+      )) || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      branch: ${{ steps.set-vars.outputs.branch }}
+      isPrerelease: ${{ steps.set-vars.outputs.isPrerelease }}
+      versionSuffix: ${{ steps.set-vars.outputs.versionSuffix }}
+      npmTag: ${{ steps.set-vars.outputs.npmTag }}
+      rebaseDevToMain: ${{ steps.set-vars.outputs.rebaseDevToMain }}
+    steps:
+      - name: Set workflow context
+        id: set-vars
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF_NAME}" == "main" ]]; then
+            echo "branch=main" >> $GITHUB_OUTPUT
+            echo "isPrerelease=false" >> $GITHUB_OUTPUT
+            echo "versionSuffix=" >> $GITHUB_OUTPUT
+            echo "npmTag=latest" >> $GITHUB_OUTPUT
+            echo "rebaseDevToMain=true" >> $GITHUB_OUTPUT
+          else
+            # Manual dispatch or other
+            branch="${{ github.ref_name }}"
+            isPrerelease="${{ github.event.inputs.isPrerelease || 'true' }}"
+            versionSuffix="${{ github.event.inputs.versionSuffix || '' }}"
+            rebaseDevToMain="${{ github.event.inputs.rebaseDevToMain || 'false' }}"
+            if [[ "$isPrerelease" == "true" ]]; then
+              npmTag="canary"
+              # Generate a canary versionSuffix if none is given
+              if [[ -z "$versionSuffix" ]]; then
+                short_sha="${GITHUB_SHA::7}"
+                date_part=$(date +%Y%m%d)
+                versionSuffix="canary-${date_part}-${short_sha}"
+              fi
+            else
+              npmTag="latest"
+            fi
+            echo "branch=$branch" >> $GITHUB_OUTPUT
+            echo "isPrerelease=$isPrerelease" >> $GITHUB_OUTPUT
+            echo "versionSuffix=$versionSuffix" >> $GITHUB_OUTPUT
+            echo "npmTag=$npmTag" >> $GITHUB_OUTPUT
+            echo "rebaseDevToMain=$rebaseDevToMain" >> $GITHUB_OUTPUT
+          fi
+
+  lint:
+    needs: detect-context
+    uses: ./.github/workflows/job-lint.yml
+    with:
+      branch: ${{ needs.detect-context.outputs.branch }}
+    secrets:
+      KEY_SSH: ${{ secrets.KEY_SSH }}
+      KEY_GPG: ${{ secrets.KEY_GPG }}
+      GIT_EMAIL: ${{ secrets.GIT_EMAIL }}
+
+  build:
+    needs: 
+      - lint
+      - detect-context
+    uses: ./.github/workflows/job-build.yml
+    with:
+      branch: ${{ needs.detect-context.outputs.branch }}
+    secrets:
+      KEY_SSH: ${{ secrets.KEY_SSH }}
+
+  unit-test:
+    needs:
+      - build
+      - detect-context
+    uses: ./.github/workflows/job-unit-test.yml
+    with:
+      branch: ${{ needs.detect-context.outputs.branch }}
+    secrets:
+      KEY_SSH: ${{ secrets.KEY_SSH }}
+
+  integration-test:
+    needs:
+      - build
+      - detect-context
+    uses: ./.github/workflows/job-integration-test.yml
+    with:
+      branch: ${{ needs.detect-context.outputs.branch }}
+    secrets:
+      KEY_SSH: ${{ secrets.KEY_SSH }}
+
+  create-release:
+    needs:
+      - unit-test
+      - integration-test
+      - detect-context
+    uses: ./.github/workflows/job-create-github-release.yml
+    with:
+      branch: ${{ needs.detect-context.outputs.branch }}
+      versionSuffix: ${{ needs.detect-context.outputs.versionSuffix }}
+      isPrerelease: ${{ needs.detect-context.outputs.isPrerelease }}
+    secrets:
+      KEY_SSH: ${{ secrets.KEY_SSH }}
+      KEY_GPG: ${{ secrets.KEY_GPG }}
+      GIT_EMAIL: ${{ secrets.GIT_EMAIL }}
+      GH_TOKEN:  ${{ secrets.GITHUB_TOKEN }}
+
+  publish-npm:
+    needs:
+      - create-release
+      - detect-context
+    uses: ./.github/workflows/job-publish-npm.yml
+    with:
+      branch: ${{ needs.detect-context.outputs.branch }}
+      npmTag: ${{ needs.detect-context.outputs.npmTag }}
+    secrets:
+      KEY_SSH: ${{ secrets.KEY_SSH }}
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  docs:
+    needs:
+      - unit-test
+      - integration-test
+      - detect-context
+    if: needs.detect-context.outputs.branch == 'main' && needs.detect-context.outputs.isPrerelease == 'false'
+    name: Generate Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: 'main'
+          fetch-depth: 0
+          ssh-key: ${{ secrets.KEY_SSH }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install Dependencies
+        run: bun install
+
+      - name: Generate Docs
+        run: bun run docs
+
+      - name: Upload Coverage
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+
+  rebase-dev:
+    needs:
+      - create-release
+      - detect-context
+    if: needs.detect-context.outputs.rebaseDevToMain == 'true'
+    uses: ./.github/workflows/job-rebase.yml
+    with:
+      from: develop
+      to: main
+    secrets:
+      KEY_SSH: ${{ secrets.KEY_SSH }}
+      GIT_EMAIL: ${{ secrets.GIT_EMAIL }}

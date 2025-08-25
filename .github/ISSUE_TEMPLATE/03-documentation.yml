@@ -1,0 +1,49 @@
+name: 📚 Documentation Request
+title: "[DOC]: "
+description: Propose an improvement, correction, or addition to the documentation
+labels: ["needs triage", "documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # 📚 Thank you for helping improve the documentation!
+
+        Please provide as many details as possible to help us understand and address your request.
+        Well-documented projects benefit everyone—your feedback is valuable!
+  - type: checkboxes
+    attributes:
+      label: Have you checked if the documentation already exists?
+      description: |
+        Before submitting a request, please check if the documentation already exists or if a similar request has been made. If so, add a 👍 to the existing issue.
+      options:
+        - label: "Yes, I have checked and this documentation does not exist yet."
+          required: true
+  - type: input
+    attributes:
+      label: 📄 Subject or relevant page
+      description: Indicate the page, file, or documentation section concerned (provide a link or path if possible).
+      placeholder: "E.g. README.md, docs/installation.md, etc."
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 📝 Request description
+      description: Clearly describe what should be added, corrected, or improved in the documentation. Be as specific as possible.
+      placeholder: "E.g. Add a section about advanced configuration."
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 🤔 Context or justification
+      description: Explain why this change is necessary or useful. If possible, mention any issues or confusion caused by the current documentation.
+      placeholder: "E.g. Users often encounter difficulties with this topic."
+  - type: textarea
+    attributes:
+      label: ✅ Expected outcome
+      description: Describe what you expect to see after the documentation is updated. What would success look like?
+      placeholder: "E.g. Clearer instructions for new users."
+  - type: textarea
+    attributes:
+      label: 📎 Additional information / screenshots
+      description: Add any information, examples, or screenshots that might help us better understand the request.
+      placeholder: "Here is an example or a screenshot..."

@@ -1,0 +1,43 @@
+name: 💬 Help & Question
+title: "[HELP]: "
+description: Request help or ask a question about the project
+labels: ["needs triage", "question", "help wanted"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # 💬 Thank you for your question or help request!
+
+        Please provide as many details as possible so we can better understand your request and assist you effectively.
+  - type: checkboxes
+    attributes:
+      label: Have you checked existing questions?
+      description: |
+        Before submitting, please check if your question has already been asked. If so, add a 👍 to the existing issue.
+      options:
+        - label: "Yes, I have checked and this question has not been asked yet."
+          required: true
+  - type: input
+    attributes:
+      label: Subject or relevant feature
+      description: Indicate the subject, feature, or part of the project concerned (provide a link or path if possible).
+      placeholder: "E.g. README.md, installation, API usage, etc."
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Description of the question or issue
+      description: Clearly describe your question or the problem you are facing. Be as specific as possible.
+      placeholder: "E.g. I don't understand how to use function X..."
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Steps already taken
+      description: Explain what you have already tried or researched to solve your problem.
+      placeholder: "E.g. I read the documentation, tried command Y, etc."
+  - type: textarea
+    attributes:
+      label: Additional information / screenshots
+      description: Add any information, example, or screenshot that might help us better understand your request.
+      placeholder: "Here is an example or a screenshot..."
