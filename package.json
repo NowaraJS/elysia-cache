@@ -1,12 +1,16 @@
 {
-	"name": "template-package-npm",
+	"name": "@nowarajs/elysia-cache",
 	"version": "1.0.0",
-	"author": "Komiriko",
+	"author": "NowaraJS",
 	"description": "A template to create a bun package.",
 	"type": "module",
 	"license": "MIT",
 	"keywords": [
-		"pkg"
+		"bun",
+		"nowarajs",
+		"cache",
+		"elysia",
+		"elysia-cache"
 	],
 	"scripts": {
 		"build": "bun builder.ts",
@@ -20,12 +24,19 @@
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.34.0",
+		"@nowarajs/error": "^1.1.8",
+		"@nowarajs/kv-store": "^1.1.2",
 		"@stylistic/eslint-plugin": "^5.2.3",
-		"@types/bun": "^1.2.20",
+		"@types/bun": "^1.2.21",
 		"eslint": "^9.34.0",
 		"globals": "^16.3.0",
-		"typescript-eslint": "^8.40.0",
+		"typescript-eslint": "^8.41.0",
 		"typescript": "^5.9.2"
+	},
+	"peerDependencies": {
+		"@nowarajs/error": "^1.1.8",
+		"@nowarajs/kv-store": "^1.1.1",
+		"elysia": "^1.3.20"
 	},
 	"exports": {
 		"./enums": "./dist/enums/index.js",
@@ -84,5 +95,12 @@
 			"tagMessage": "v{{newVersion}}",
 			"tagBody": "v{{newVersion}}"
 		}
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/NowaraJS/elysia-cache.git"
+	},
+	"dependencies": {
+		"ioredis": "^5.7.0"
 	}
 }

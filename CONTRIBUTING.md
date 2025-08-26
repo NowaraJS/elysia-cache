@@ -29,12 +29,12 @@ Please note we have a [Code of Conduct](./CODE_OF_CONDUCT.md), please follow it 
 > If you want to ask a question, we assume that you have read the available [documentation](./README.md).
 
 Before asking a question, please:
-- Search for existing [issues](https://github.com/Komiriko/template-package-npm/issues) that might help you
+- Search for existing [issues](https://github.com/NowaraJS/elysia-cache/issues) that might help you
 - Check if someone already asked the same question
 
 **How to ask:**
-- [Create a new help & question issue](https://github.com/Komiriko/template-package-npm/issues/new/choose) using our template
-- Or send an email to [komiriko@pm.me](mailto:komiriko@pm.me) for quick questions
+- [Create a new help & question issue](https://github.com/NowaraJS/elysia-cache/issues/new/choose) using our template
+- Or send an email to [nowarajs@pm.me](mailto:nowarajs@pm.me) for quick questions
 
 We'll do our best to help you as soon as possible! 💬
 
@@ -49,10 +49,10 @@ Found a bug? We'd love to hear about it! 🐞
 
 **Before submitting:**
 - Make sure you're using the latest version
-- Check if the bug has already been reported in our [issues](https://github.com/Komiriko/template-package-npm/issues?q=label%3Abug)
+- Check if the bug has already been reported in our [issues](https://github.com/NowaraJS/elysia-cache/issues?q=label%3Abug)
 
 **How to report:**
-Simply [create a new bug report](https://github.com/Komiriko/template-package-npm/issues/new/choose) using our bug report template. The template will guide you through providing all the necessary information we need to investigate and fix the issue quickly.
+Simply [create a new bug report](https://github.com/NowaraJS/elysia-cache/issues/new/choose) using our bug report template. The template will guide you through providing all the necessary information we need to investigate and fix the issue quickly.
 
 ### Suggesting Enhancements
 
@@ -61,17 +61,17 @@ Have an idea to make the project better? We'd love to hear it! ✨
 **Before submitting:**
 - Make sure you're using the latest version
 - Check the [documentation](./README.md) to see if the feature already exists
-- Search [existing enhancement requests](https://github.com/Komiriko/template-package-npm/issues?q=label%3Aenhancement) to avoid duplicates
+- Search [existing enhancement requests](https://github.com/NowaraJS/elysia-cache/issues?q=label%3Aenhancement) to avoid duplicates
 
 **How to suggest:**
-[Create a new feature request](https://github.com/Komiriko/template-package-npm/issues/new/choose) using our feature request template. It will help you structure your idea and provide all the context we need to evaluate and potentially implement it.
+[Create a new feature request](https://github.com/NowaraJS/elysia-cache/issues/new/choose) using our feature request template. It will help you structure your idea and provide all the context we need to evaluate and potentially implement it.
 
 ### Your First Code Contribution
 
 Unsure where to begin contributing? You can start by looking through these `good-first-issue` and `help-wanted` issues:
 
-- [Good first issues](https://github.com/Komiriko/template-package-npm/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22) - issues which should only require a few lines of code, and a test or two.
-- [Help wanted issues](https://github.com/Komiriko/template-package-npm/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22) - issues which should be a bit more involved than `good first issue` issues.
+- [Good first issues](https://github.com/NowaraJS/elysia-cache/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22) - issues which should only require a few lines of code, and a test or two.
+- [Help wanted issues](https://github.com/NowaraJS/elysia-cache/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22) - issues which should be a bit more involved than `good first issue` issues.
 
 ### Improving The Documentation
 
@@ -82,7 +82,7 @@ Documentation improvements are always welcome! Whether it's fixing typos, clarif
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/template-package-npm.git
+   git clone https://github.com/NowaraJS/elysia-cache.git
    cd template-package-npm
    ```
 
