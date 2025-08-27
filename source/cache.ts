@@ -59,6 +59,10 @@ export const cache = ({
 					set.headers['last-modified'] = now.toUTCString();
 					set.headers['expires'] = new Date(now.getTime() + (ttl * 1000)).toUTCString();
 
+					if (!set.headers['x-cache'])
+						set.headers['x-cache'] = 'MISS';
+
+
 					const cacheData = {
 						response,
 						metadata: {
