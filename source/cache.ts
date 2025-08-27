@@ -7,13 +7,13 @@ import { generateCacheKey } from './utils/generateCacheKey';
 export const cache = ({
 	defaultTtl = 60,
 	prefix = '',
-	storage = ':memory:'
+	store = ':memory:'
 }: CacheOptions = {}) => new Elysia()
 	.state(
 		'kvStore',
-		storage === ':memory:'
+		store === ':memory:'
 			? new MemoryStore()
-			: storage
+			: store
 	)
 	.state('_cacheKey', '')
 	.onRequest(async ({ request, store, set }) => {

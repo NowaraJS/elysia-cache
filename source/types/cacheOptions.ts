@@ -20,5 +20,5 @@ export interface CacheOptions {
 	 *
 	 * @defaultValue ':memory:'
 	 */
-	storage?: ':memory:' | KvStore;
+	store?: ':memory:' | KvStore;
 }
