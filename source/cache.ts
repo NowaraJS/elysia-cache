@@ -26,11 +26,9 @@ export const cache = ({
 			set.headers['Cache-Control'] = `max-age=${defaultTtl}, public`;
 			set.headers['X-Cache'] = 'HIT';
 			set.headers['ETag'] = `"${prefix}${cacheKey}"`;
-			return {
-				message: 'Response from cache',
-				cachedResponse
-			};
+			return cachedResponse;
 		}
+		return void 0;
 	})
 	.macro({
 		isCached: (enable: boolean | number) => {
