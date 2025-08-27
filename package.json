@@ -1,6 +1,6 @@
 {
 	"name": "@nowarajs/elysia-cache",
-	"version": "1.2.0",
+	"version": "1.2.1",
 	"author": "NowaraJS",
 	"description": "A template to create a bun package.",
 	"type": "module",
