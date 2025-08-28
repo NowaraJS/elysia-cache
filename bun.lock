@@ -61,9 +61,9 @@
 
     "@nodelib/fs.walk": ["@nodelib/fs.walk@1.2.8", "", { "dependencies": { "@nodelib/fs.scandir": "2.1.5", "fastq": "^1.6.0" } }, "sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg=="],
 
-    "@nowarajs/error": ["@nowarajs/error@1.1.8", "", {}, "sha512-0v+dSe5vpSuRIFgKO4CpOXq0xdOhbgZRIlh+4BfJhiwbQBJU2r5Z4eooViAo2Ta0sp7OMvN7fhM4rCqZWhXEKw=="],
+    "@nowarajs/error": ["@nowarajs/error@1.1.9", "", {}, "sha512-ekmjbkTZQ+DdvI2lB66uw8lmRqx97xLIoIRNsfiKRc0Mg/e/uOfDHPSzMMoj/1XUEsBbKa6RYQwFqhb7AjUgpg=="],
 
-    "@nowarajs/kv-store": ["@nowarajs/kv-store@1.1.2", "", { "peerDependencies": { "@nowarajs/error": "^1.1.8", "ioredis": "latest" }, "optionalPeers": ["ioredis"] }, "sha512-bm26RPytovZG/JnUQQEGwA9zBtAHP7rsE5/8bbg1tosU6/tNRfVBZi0TaQ1CNR6j2bYOAzIOrP/zr9GPbiNjjA=="],
+    "@nowarajs/kv-store": ["@nowarajs/kv-store@1.1.3", "", { "peerDependencies": { "@nowarajs/error": "^1.1.9", "ioredis": "latest" }, "optionalPeers": ["ioredis"] }, "sha512-HD9ehVESfFIBGIzqDUMYTqsmnrsMGkthjlZBH4MWWatCmXI8Q5xqvK+frAeMjKp6QrUkEH40ZuHqQluHFLYRcA=="],
 
     "@sinclair/typebox": ["@sinclair/typebox@0.34.40", "", {}, "sha512-gwBNIP8ZAYev/ORDWW0QvxdwPXwxBtLsdsJgSc7eDIRt8ubP+rxUBzPsrwnu16fgEF8Bx4lh/+mvQvJzcTM6Kw=="],
 
