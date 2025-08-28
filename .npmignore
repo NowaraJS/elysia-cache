@@ -10,6 +10,8 @@
 
 # === Bundler configuration files ===
 builder.ts
+
+# === Release-related files ===
 CHANGELOG.md
 
 # === Documentation-related folders ===
@@ -29,7 +31,11 @@ test/
 sandbox/
 
 # === Core project files ===
-README.md
 tsconfig.json
 tsconfig.build.json
 bunfig.toml
+
+# === Community-related files ===
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
+SECURITY.md
