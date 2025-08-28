@@ -1,4 +1,24 @@
 
+## v1.2.5
+
+[compare changes](https://github.com/NowaraJS/elysia-cache/compare/v1.2.4...v1.2.5)
+
+### 📦 Build
+
+- **📦:** [Update dependencies in package.json and bun.lock] ([b08f073](https://github.com/NowaraJS/elysia-cache/commit/b08f073))
+
+### 🦉 Chore
+
+- **🦉:** [Update .npmignore for better file management] ([416c0f9](https://github.com/NowaraJS/elysia-cache/commit/416c0f9))
+
+### 🤖 CI
+
+- **🤖:** [Remove CHANGELOG.md before publishing to NPM] ([bf6e96b](https://github.com/NowaraJS/elysia-cache/commit/bf6e96b))
+
+### ❤️ Contributors
+
+- Komiroko <komiriko@pm.me>
+
 ## v1.2.4
 
 [compare changes](https://github.com/NowaraJS/elysia-cache/compare/v1.2.3...v1.2.4)
