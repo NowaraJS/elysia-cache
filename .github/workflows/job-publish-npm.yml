@@ -54,6 +54,9 @@ jobs:
       - name: Build the project
         run: bun run build
 
+      - name: Delete CHANGELOG.md
+        run: rm -f CHANGELOG.md
+
       - name: Publish the project to NPM
         id: publish_npm
         env:
