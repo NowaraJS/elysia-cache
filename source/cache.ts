@@ -35,6 +35,9 @@ export const cache = ({
 				set.headers['etag'] = `"${prefix}${cacheKey}"`;
 				set.headers['expires'] = new Date(Date.now() + (defaultTtl * 1000)).toUTCString();
 				set.headers['last-modified'] = metadata.createdAt;
+				if (response instanceof Response)
+					return response.clone();
+
 				return response;
 			}
 			set.headers['x-cache'] = 'MISS';
@@ -64,7 +67,9 @@ export const cache = ({
 
 
 					const cacheData = {
-						response,
+						response: response instanceof Response
+							? response.clone()
+							: response,
 						metadata: {
 							createdAt: now.toUTCString(),
 							ttl
