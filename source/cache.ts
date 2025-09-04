@@ -1,9 +1,9 @@
 import { Elysia } from 'elysia';
 
 import { MemoryStore } from '@nowarajs/kv-store/memory';
-import type { CacheOptions } from './types/cacheOptions';
-import { generateCacheKey } from './utils/generateCacheKey';
-import type { CacheItem } from './types/cacheItem';
+import type { CacheOptions } from './types/cache-options';
+import { generateCacheKey } from './utils/generate-cache-key';
+import type { CacheItem } from './types/cache-item';
 
 export const cache = ({
 	defaultTtl = 60,
@@ -30,10 +30,10 @@ export const cache = ({
 				&& 'metadata' in cachedData
 			) {
 				const { response, metadata } = cachedData as CacheItem;
-				set.headers['cache-control'] = `max-age=${defaultTtl}, public`;
+				set.headers['cache-control'] = `max-age=${metadata.ttl}, public`;
 				set.headers['x-cache'] = 'HIT';
 				set.headers['etag'] = `"${prefix}${cacheKey}"`;
-				set.headers['expires'] = new Date(Date.now() + (defaultTtl * 1000)).toUTCString();
+				set.headers['expires'] = new Date(Date.now() + (metadata.ttl * 1000)).toUTCString();
 				set.headers['last-modified'] = metadata.createdAt;
 				if (response instanceof Response)
 					return response.clone();

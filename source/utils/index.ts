@@ -1,1 +1,1 @@
-export { generateCacheKey } from './generateCacheKey';
+export { generateCacheKey } from './generate-cache-key';
