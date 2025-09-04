@@ -1,1 +1,1 @@
-export type { CacheOptions } from './cacheOptions';
+export type { CacheOptions } from './cache-options';

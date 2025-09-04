@@ -166,4 +166,29 @@ describe('Cache Module', () => {
 		expect(await response3.text()).toBe('result-2');
 		expect(response3.headers.get('x-cache')).toBe('MISS');
 	}, { timeout: 5000 });
+
+	test('should handle specific TTL in isCached correctly', async () => {
+		const cacheTtl = 5; // 5-second TTL
+		const cachePlugin = cache({ defaultTtl: 30 })
+			.get('/specific-ttl', () => 'cached content', { isCached: cacheTtl });
+
+		// First request - should have MISS headers
+		const response1 = await cachePlugin.handle(new Request('http://localhost/specific-ttl'));
+		expect(await response1.text()).toBe('cached content');
+
+		// Check MISS headers
+		expect(response1.headers.get('x-cache')).toBe('MISS');
+		expect(response1.headers.get('cache-control')).toBe(`max-age=${cacheTtl}, public`);
+
+		// Wait for TTL to expire
+		Bun.sleepSync((cacheTtl + 1) * 1000);
+
+		// Second request - should have MISS headers again
+		const response2 = await cachePlugin.handle(new Request('http://localhost/specific-ttl'));
+		expect(await response2.text()).toBe('cached content');
+
+		// Check MISS headers
+		expect(response2.headers.get('x-cache')).toBe('MISS');
+		expect(response2.headers.get('cache-control')).toBe(`max-age=${cacheTtl}, public`);
+	});
 });
