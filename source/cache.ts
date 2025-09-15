@@ -37,7 +37,6 @@ export const cache = ({
 				set.headers['last-modified'] = metadata.createdAt;
 				if (response instanceof Response)
 					return response.clone();
-
 				return response;
 			}
 			set.headers['x-cache'] = 'MISS';
@@ -64,7 +63,6 @@ export const cache = ({
 
 					if (!set.headers['x-cache'])
 						set.headers['x-cache'] = 'MISS';
-
 
 					const cacheData = {
 						response: response instanceof Response

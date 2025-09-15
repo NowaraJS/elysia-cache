@@ -23,20 +23,20 @@
 		"test": "bun test --coverage"
 	},
 	"devDependencies": {
-		"@eslint/js": "^9.34.0",
-		"@nowarajs/error": "^1.3.0",
-		"@nowarajs/kv-store": "^1.1.4",
+		"@eslint/js": "^9.35.0",
+		"@nowarajs/error": "^1.3.1",
+		"@nowarajs/kv-store": "^1.1.5",
 		"@stylistic/eslint-plugin": "^5.3.1",
-		"@types/bun": "^1.2.21",
-		"eslint": "^9.34.0",
-		"globals": "^16.3.0",
-		"typescript-eslint": "^8.42.0",
+		"@types/bun": "^1.2.22",
+		"eslint": "^9.35.0",
+		"globals": "^16.4.0",
+		"typescript-eslint": "^8.43.0",
 		"typescript": "^5.9.2"
 	},
 	"peerDependencies": {
-		"@nowarajs/error": "^1.3.0",
-		"@nowarajs/kv-store": "^1.1.4",
-		"elysia": "^1.3.21"
+		"@nowarajs/error": "^1.3.1",
+		"@nowarajs/kv-store": "^1.1.5",
+		"elysia": "^1.4.5"
 	},
 	"exports": {
 		"./types": "./dist/types/index.js",
