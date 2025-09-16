@@ -1,4 +1,25 @@
 
+## v1.2.8
+
+[compare changes](https://github.com/NowaraJS/elysia-cache/compare/v1.2.7...v1.2.8)
+
+### 🔧 Fixes
+
+- **🔧:** [Change deprecated response parameter to responseValue in afterHandle] ([b54a5f3](https://github.com/NowaraJS/elysia-cache/commit/b54a5f3))
+
+### 🧹 Refactors
+
+- **🧹:** [Refactor test imports for consistency] ## Refactoring - Updated test imports from `it` to `test` for consistency across test files. ([bac9bcb](https://github.com/NowaraJS/elysia-cache/commit/bac9bcb))
+
+### 📦 Build
+
+- **📦:** [Update devDependencies and peerDependencies versions] ([8bd103b](https://github.com/NowaraJS/elysia-cache/commit/8bd103b))
+- **📦:** [Update typescript-eslint version to ^8.44.0] Updated the typescript-eslint dependency version from ^8.43.0 to ^8.44.0 to ensure compatibility with the latest TypeScript features and improvements. ([8474f2f](https://github.com/NowaraJS/elysia-cache/commit/8474f2f))
+
+### ❤️ Contributors
+
+- Komiroko <komiriko@pm.me>
+
 ## v1.2.7
 
 [compare changes](https://github.com/NowaraJS/elysia-cache/compare/v1.2.6...v1.2.7)
