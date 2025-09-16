@@ -49,7 +49,7 @@ export const cache = ({
 				? enable
 				: (enable ? defaultTtl : 0);
 			return {
-				async afterHandle({ set, response, store, request }) {
+				async afterHandle({ set, responseValue, store, request }) {
 					const sanitizeUrl = (new URL(request.url)).pathname;
 					if (!store._cachedRoutes.has(`${request.method}:${sanitizeUrl}`))
 						store._cachedRoutes.add(`${request.method}:${sanitizeUrl}`);
@@ -65,9 +65,9 @@ export const cache = ({
 						set.headers['x-cache'] = 'MISS';
 
 					const cacheData = {
-						response: response instanceof Response
-							? response.clone()
-							: response,
+						response: responseValue instanceof Response
+							? responseValue.clone()
+							: responseValue,
 						metadata: {
 							createdAt: now.toUTCString(),
 							ttl
