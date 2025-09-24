@@ -1,4 +1,16 @@
 
+## v1.2.9
+
+[compare changes](https://github.com/NowaraJS/elysia-cache/compare/v1.2.8...v1.2.9)
+
+### 📦 Build
+
+- **📦:** [Update Dependencies] ([1ad7fa0](https://github.com/NowaraJS/elysia-cache/commit/1ad7fa0))
+
+### ❤️ Contributors
+
+- Komiroko <komiriko@pm.me>
+
 ## v1.2.8
 
 [compare changes](https://github.com/NowaraJS/elysia-cache/compare/v1.2.7...v1.2.8)
