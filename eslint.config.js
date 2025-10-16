@@ -1,3 +1,5 @@
+// deps : eslint @eslint/js globals @stylistic/eslint-plugin typescript-eslint
+
 import pluginJs from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
@@ -48,7 +50,11 @@ export default [
 			'@stylistic/indent-binary-ops': ['error', 'tab'],
 			'@stylistic/key-spacing': ['error', { beforeColon: false }],
 			'@stylistic/keyword-spacing': ['error', { before: true }],
-			'@stylistic/lines-between-class-members': ['error', 'always'],
+			'@stylistic/lines-between-class-members': ['error', {
+				enforce: [
+					{ blankLine: 'always', prev: 'method', next: 'method' }
+				]
+			}],
 			'@stylistic/multiline-ternary': ['error', 'always-multiline'],
 			'@stylistic/new-parens': 'error',
 			'@stylistic/no-confusing-arrow': 'error',
@@ -181,7 +187,8 @@ export default [
 			'@typescript-eslint/no-confusing-void-expression': 'off',
 			'@typescript-eslint/consistent-return': 'warn',
 			'@typescript-eslint/prefer-for-of': 'off',
-			'@typescript-eslint/no-empty-object-type': 'off'
+			'@typescript-eslint/no-empty-object-type': 'off',
+			'@typescript-eslint/no-implied-eval': 'off'
 		}
 	}
 ];
