@@ -9,23 +9,16 @@ on:
         required: true
         type: string
     secrets:
+      BUN_VERSION:
+        required: false
       KEY_SSH:
         required: true
 
 jobs:
-  run-integration-tests:
+  integration-test:
     name: Integration Tests
     runs-on: ubuntu-latest
     steps:
-      - name: Verify required secrets
-        run: |
-          echo "🔍 Verifying required secrets for integration test job..."
-          if [ -z "${{ secrets.KEY_SSH }}" ]; then
-            echo "❌ KEY_SSH secret is missing"
-            exit 1
-          fi
-          echo "✅ All required secrets are present"
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -33,12 +26,10 @@ jobs:
           fetch-depth: 0
           ssh-key: ${{ secrets.KEY_SSH }}
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Bun Project
+        uses: ./.github/actions/setup-bun-project
+        with:
+          bun-version: ${{ secrets.BUN_VERSION || 'latest' }}
 
-      - name: Install Dependencies
-        run: bun install
-
-      - name: Run Integration Tests and update Summary
-        id: integration_test
+      - name: Run Integration Tests
         run: bun run test:integration

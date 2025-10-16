@@ -29,23 +29,10 @@ on:
         type: string
 
 jobs:
-  rebase-branches:
+  rebase:
     name: Rebase Branches
     runs-on: ubuntu-latest
     steps:
-      - name: Verify required secrets
-        run: |
-          echo "🔍 Verifying required secrets for rebase job..."
-          if [ -z "${{ secrets.KEY_SSH }}" ]; then
-            echo "❌ KEY_SSH secret is missing"
-            exit 1
-          fi
-          if [ -z "${{ secrets.GIT_EMAIL }}" ]; then
-            echo "❌ GIT_EMAIL secret is missing"
-            exit 1
-          fi
-          echo "✅ All required secrets are present"
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -53,10 +40,10 @@ jobs:
           fetch-depth: 0
           ssh-key: ${{ secrets.KEY_SSH }}
 
-      - name: Fetch all branches
+      - name: Fetch All Branches
         run: git fetch origin '+refs/heads/*:refs/remotes/origin/*'
 
-      - name: Rebase
+      - name: Rebase and Push
         run: |
           git config user.name "GitHub Action"
           git config user.email "${{ secrets.GIT_EMAIL }}"

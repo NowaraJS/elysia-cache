@@ -9,6 +9,8 @@ on:
         required: true
         type: string
     secrets:
+      BUN_VERSION:
+        required: false
       KEY_SSH:
         required: true
       KEY_GPG:
@@ -17,27 +19,10 @@ on:
         required: true
 
 jobs:
-  check-lint:
+  lint:
     name: Lint & Auto-fix
     runs-on: ubuntu-latest
     steps:
-      - name: Verify required secrets
-        run: |
-          echo "🔍 Verifying required secrets for lint job..."
-          if [ -z "${{ secrets.KEY_SSH }}" ]; then
-            echo "❌ KEY_SSH secret is missing"
-            exit 1
-          fi
-          if [ -z "${{ secrets.KEY_GPG }}" ]; then
-            echo "❌ KEY_GPG secret is missing"
-            exit 1
-          fi
-          if [ -z "${{ secrets.GIT_EMAIL }}" ]; then
-            echo "❌ GIT_EMAIL secret is missing"
-            exit 1
-          fi
-          echo "✅ All required secrets are present"
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -45,40 +30,34 @@ jobs:
           fetch-depth: 0
           ssh-key: ${{ secrets.KEY_SSH }}
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Bun Project
+        uses: ./.github/actions/setup-bun-project
         with:
-          bun-version: latest
+          bun-version: ${{ secrets.BUN_VERSION || 'latest' }}
 
-      - name: Install Dependencies
-        run: bun install
-
-      - name: Run Lint and try to auto-fix if possible
-        id: lint_step
+      - name: Run Lint
+        id: lint
         run: |
           if bun run lint; then
-            echo "lint_status=clean" >> $GITHUB_OUTPUT
+            echo "status=clean" >> $GITHUB_OUTPUT
           else
             bun run fix-lint
             if bun run lint; then
-              echo "lint_status=fixed" >> $GITHUB_OUTPUT
+              echo "status=fixed" >> $GITHUB_OUTPUT
             else
-              echo "lint_status=failed" >> $GITHUB_OUTPUT
+              echo "status=failed" >> $GITHUB_OUTPUT
             fi
           fi
 
-      - name: Import GPG key and configure git
-        if: steps.lint_step.outputs.lint_status == 'fixed'
-        run: |
-          echo "${{ secrets.KEY_GPG }}" | gpg --batch --import
-          git config --local user.signingkey "$(gpg --list-keys --with-colons | grep '^pub' | cut -d':' -f5 | head -n1)"
-          git config --local commit.gpgsign true
-          git config --local tag.gpgsign true
-          git config --local user.email "${{ secrets.GIT_EMAIL }}"
-          git config --local user.name "github-actions"
+      - name: Setup Git
+        if: steps.lint.outputs.status == 'fixed'
+        uses: ./.github/actions/setup-git
+        with:
+          gpg-key: ${{ secrets.KEY_GPG }}
+          git-email: ${{ secrets.GIT_EMAIL }}
 
       - name: Commit Changes
-        if: steps.lint_step.outputs.lint_status == 'fixed'
+        if: steps.lint.outputs.status == 'fixed'
         run: |
           if git diff --name-only | grep -E '\.(js|ts|jsx|tsx|css|scss|json|md|yml|yaml)$'; then
             git add .
@@ -87,7 +66,6 @@ jobs:
             echo "No lint-related changes to commit."
           fi
 
-      - name: Push changes
-        if: steps.lint_step.outputs.lint_status == 'fixed'
-        run: |
-          git push origin HEAD:${{ inputs.branch }}
+      - name: Push Changes
+        if: steps.lint.outputs.status == 'fixed'
+        run: git push origin HEAD:${{ inputs.branch }}

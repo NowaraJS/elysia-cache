@@ -13,29 +13,18 @@ on:
         required: true
         type: string
     secrets:
+      BUN_VERSION:
+        required: false
       KEY_SSH:
         required: true
       NPM_TOKEN:
         required: true
 
 jobs:
-  publish-package:
+  publish:
     name: Publish to NPM
     runs-on: ubuntu-latest
     steps:
-      - name: Verify required secrets
-        run: |
-          echo "🔍 Verifying required secrets for NPM publish job..."
-          if [ -z "${{ secrets.KEY_SSH }}" ]; then
-            echo "❌ KEY_SSH secret is missing"
-            exit 1
-          fi
-          if [ -z "${{ secrets.NPM_TOKEN }}" ]; then
-            echo "❌ NPM_TOKEN secret is missing"
-            exit 1
-          fi
-          echo "✅ All required secrets are present"
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -43,62 +32,60 @@ jobs:
           fetch-depth: 0
           ssh-key: ${{ secrets.KEY_SSH }}
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Bun Project
+        uses: ./.github/actions/setup-bun-project
         with:
-          bun-version: latest
+          bun-version: ${{ secrets.BUN_VERSION || 'latest' }}
 
-      - name: Install Dependencies
-        run: bun install
-
-      - name: Build the project
+      - name: Build
         run: bun run build
 
-      - name: Delete CHANGELOG.md
+      - name: Clean CHANGELOG
         run: rm -f CHANGELOG.md
 
-      - name: Publish the project to NPM
-        id: publish_npm
+      - name: Publish to NPM
+        id: publish
         env:
           NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           version=$(jq -r .version package.json)
           name=$(jq -r .name package.json)
           if bun publish --access public --tag ${{ inputs.npmTag }}; then
-            echo "publish_status=success" >> $GITHUB_OUTPUT
-            echo "published_version=$version" >> $GITHUB_OUTPUT
-            echo "package_name=$name" >> $GITHUB_OUTPUT
-            exit_code=0
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "version=$version" >> $GITHUB_OUTPUT
+            echo "name=$name" >> $GITHUB_OUTPUT
           else
-            echo "publish_status=failed" >> $GITHUB_OUTPUT
-            echo "published_version=$version" >> $GITHUB_OUTPUT
-            echo "package_name=$name" >> $GITHUB_OUTPUT
-            exit_code=1
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "version=$version" >> $GITHUB_OUTPUT
+            echo "name=$name" >> $GITHUB_OUTPUT
+            exit 1
           fi
-          exit $exit_code
 
-      - name: Final Summary
+      - name: Summary
         run: |
-          version="${{ steps.publish_npm.outputs.published_version }}"
-          name="${{ steps.publish_npm.outputs.package_name }}"
-          status="${{ steps.publish_npm.outputs.publish_status }}"
+          version="${{ steps.publish.outputs.version }}"
+          name="${{ steps.publish.outputs.name }}"
+          status="${{ steps.publish.outputs.status }}"
           branch="${{ inputs.branch }}"
           tag="${{ inputs.npmTag }}"
+          
           if [ "$status" = "success" ]; then
             status_icon="✅ Success"
+            message="NPM publication completed successfully."
           else
             status_icon="❌ Failed"
+            message="NPM publication failed."
           fi
+          
           npm_url="https://www.npmjs.com/package/$name/v/$version"
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 🚀 NPM Publish Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Branch | NPM Tag | Version | Status | NPM Link |" >> $GITHUB_STEP_SUMMARY
-          echo "|:------:|:-------:|:-------:|:------:|:--------:|" >> $GITHUB_STEP_SUMMARY
-          echo "| $branch | $tag | $version | $status_icon | [View on npm]($npm_url) |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "$status" = "success" ]; then
-            echo "NPM publication completed successfully." >> $GITHUB_STEP_SUMMARY
-          else
-            echo "NPM publication failed." >> $GITHUB_STEP_SUMMARY
-          fi
+          
+          {
+            echo ""
+            echo "## 📦 NPM Publish Summary"
+            echo ""
+            echo "| Branch | NPM Tag | Version | Status | NPM Link |"
+            echo "|:------:|:-------:|:-------:|:------:|:--------:|"
+            echo "| $branch | $tag | $version | $status_icon | [View on npm]($npm_url) |"
+            echo ""
+            echo "$message"
+          } >> $GITHUB_STEP_SUMMARY
