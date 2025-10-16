@@ -74,19 +74,24 @@
 				"semver": "patch"
 			},
 			"chore": {
-				"title": "🦉 Chore"
+				"title": "🦉 Chore",
+				"semver": "patch"
 			},
 			"examples": {
-				"title": "🏀 Examples"
+				"title": "🏀 Examples",
+				"semver": "patch"
 			},
 			"test": {
-				"title": "🧪 Tests"
+				"title": "🧪 Tests",
+				"semver": "patch"
 			},
 			"style": {
-				"title": "🎨 Styles"
+				"title": "🎨 Styles",
+				"semver": "patch"
 			},
 			"ci": {
-				"title": "🤖 CI"
+				"title": "🤖 CI",
+				"semver": "patch"
 			}
 		},
 		"templates": {
