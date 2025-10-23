@@ -1,5 +1,5 @@
-name: main-ci
-run-name: "[main-ci] Check \"${{ github.head_ref || github.ref_name }}\" by ${{ github.actor }}"
+name: main-test
+run-name: "[main-test] Check \"${{ github.head_ref || github.ref_name }}\" by ${{ github.actor }}"
 
 on:
   workflow_dispatch:
