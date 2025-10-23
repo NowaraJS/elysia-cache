@@ -1,58 +1,52 @@
+import { MemoryStore } from '@nowarajs/kv-store/memory';
+import type { KvStore } from '@nowarajs/kv-store/types';
 import { Elysia } from 'elysia';
 
-import { MemoryStore } from '@nowarajs/kv-store/memory';
+import type { CacheItem } from './types/cache-item';
 import type { CacheOptions } from './types/cache-options';
 import { generateCacheKey } from './utils/generate-cache-key';
-import type { CacheItem } from './types/cache-item';
 
-export const cache = ({
-	defaultTtl = 60,
-	prefix = '',
-	store = ':memory:'
-}: CacheOptions = {}) => new Elysia()
-	.state({
-		kvStore: store === ':memory:'
-			? new MemoryStore()
-			: store
-	})
-	.state({
-		_cachedRoutes: new Set<string>()
-	})
-	.onRequest(async ({ request, store, set }) => {
-		const sanitizeUrl = (new URL(request.url)).pathname;
-		if (store._cachedRoutes.has(`${request.method}:${sanitizeUrl}`)) {
-			const cacheKey = await generateCacheKey(request.clone());
-			const cachedData = await store.kvStore.get(`${prefix}${cacheKey}`);
-			if (
-				cachedData
-				&& typeof cachedData === 'object'
-				&& 'response' in cachedData
-				&& 'metadata' in cachedData
-			) {
-				const { response, metadata } = cachedData as CacheItem;
-				set.headers['cache-control'] = `max-age=${metadata.ttl}, public`;
-				set.headers['x-cache'] = 'HIT';
-				set.headers['etag'] = `"${prefix}${cacheKey}"`;
-				set.headers['expires'] = new Date(Date.now() + (metadata.ttl * 1000)).toUTCString();
-				set.headers['last-modified'] = metadata.createdAt;
-				if (response instanceof Response)
-					return response.clone();
-				return response;
+export const cache = (store: KvStore = new MemoryStore()) => {
+	const cachedRoutes = new Map<string, CacheOptions>();
+
+	return new Elysia()
+		.onRequest(async ({ request, set }) => {
+			const route = `${request.method}:${(new URL(request.url)).pathname}`;
+			if (cachedRoutes.has(route)) {
+				const { ttl, prefix } = cachedRoutes.get(route) as CacheOptions;
+				const cacheKey = await generateCacheKey(request.clone());
+				const cacheItem = await store.get(`${prefix}${cacheKey}`);
+
+				if (
+					cacheItem
+					&& typeof cacheItem === 'object'
+					&& 'response' in cacheItem
+					&& 'metadata' in cacheItem
+				) {
+					const createdAt = new Date((cacheItem as CacheItem).metadata.createdAt);
+					const expiresAt = new Date(createdAt.getTime() + (ttl * 1000));
+					const now = Date.now();
+					const remaining = Math.max(0, Math.ceil((expiresAt.getTime() - now) / 1000));
+
+					set.headers['cache-control'] = `max-age=${remaining}, public`;
+					set.headers['etag'] = `"${prefix}${cacheKey}"`;
+					set.headers['last-modified'] = (cacheItem as CacheItem).metadata.createdAt;
+					set.headers['expires'] = expiresAt.toUTCString();
+					set.headers['x-cache'] = 'HIT';
+					if (cacheItem.response instanceof Response)
+						return cacheItem.response.clone();
+					return cacheItem.response;
+				}
+				set.headers['x-cache'] = 'MISS';
 			}
-			set.headers['x-cache'] = 'MISS';
-		}
-		return void 0;
-	})
-	.macro({
-		isCached: (enable: boolean | number) => {
-			const ttl = typeof enable === 'number'
-				? enable
-				: (enable ? defaultTtl : 0);
-			return {
-				async afterHandle({ set, responseValue, store, request }) {
-					const sanitizeUrl = (new URL(request.url)).pathname;
-					if (!store._cachedRoutes.has(`${request.method}:${sanitizeUrl}`))
-						store._cachedRoutes.add(`${request.method}:${sanitizeUrl}`);
+			return void 0;
+		})
+		.macro({
+			isCached: ({ ttl, prefix = '' }: CacheOptions) => ({
+				async afterHandle({ set, responseValue, request }) {
+					const route = `${request.method}:${(new URL(request.url)).pathname}`;
+					if (!cachedRoutes.has(route))
+						cachedRoutes.set(route, { ttl, prefix });
 
 					const cacheKey = await generateCacheKey(request.clone());
 					const now = new Date();
@@ -60,22 +54,19 @@ export const cache = ({
 					set.headers['etag'] = `"${prefix}${cacheKey}"`;
 					set.headers['last-modified'] = now.toUTCString();
 					set.headers['expires'] = new Date(now.getTime() + (ttl * 1000)).toUTCString();
+					set.headers['x-cache'] = 'MISS';
 
-					if (!set.headers['x-cache'])
-						set.headers['x-cache'] = 'MISS';
-
-					const cacheData = {
+					const cacheItem: CacheItem = {
 						response: responseValue instanceof Response
 							? responseValue.clone()
 							: responseValue,
 						metadata: {
-							createdAt: now.toUTCString(),
-							ttl
+							createdAt: now.toUTCString()
 						}
 					};
 
-					await store.kvStore.set(`${prefix}${cacheKey}`, cacheData, ttl);
+					await store.set(`${prefix}${cacheKey}`, cacheItem, ttl);
 				}
-			};
-		}
-	});
+			})
+		});
+};
