@@ -23,9 +23,6 @@ await Bun.build({
 		// # ————————— Types ————————— #
 		'./source/types/index.ts',
 
-		// # ————————— Utils ————————— #
-		'./source/utils/index.ts',
-
 		// # ————————— Root ————————— #
 		'./source/index.ts'
 	],
