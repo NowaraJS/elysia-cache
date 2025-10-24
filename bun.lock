@@ -4,23 +4,23 @@
     "": {
       "name": "@nowarajs/elysia-cache",
       "dependencies": {
-        "ioredis": "latest",
+        "ioredis": "^5.8.0",
       },
       "devDependencies": {
-        "@eslint/js": "latest",
-        "@nowarajs/error": "latest",
-        "@nowarajs/kv-store": "latest",
-        "@stylistic/eslint-plugin": "latest",
-        "@types/bun": "latest",
-        "eslint": "latest",
-        "globals": "latest",
-        "typescript": "latest",
-        "typescript-eslint": "latest",
+        "@eslint/js": "^9.36.0",
+        "@nowarajs/error": "^1.3.2",
+        "@nowarajs/kv-store": "^1.1.6",
+        "@stylistic/eslint-plugin": "^5.4.0",
+        "@types/bun": "^1.2.22",
+        "eslint": "^9.36.0",
+        "globals": "^16.4.0",
+        "typescript": "^5.9.2",
+        "typescript-eslint": "^8.44.1",
       },
       "peerDependencies": {
-        "@nowarajs/error": "^1.3.1",
-        "@nowarajs/kv-store": "^1.1.5",
-        "elysia": "latest",
+        "@nowarajs/error": "^1.3.2",
+        "@nowarajs/kv-store": "^1.1.6",
+        "elysia": "^1.4.7",
       },
     },
   },
@@ -61,7 +61,7 @@
 
     "@nodelib/fs.walk": ["@nodelib/fs.walk@1.2.8", "", { "dependencies": { "@nodelib/fs.scandir": "2.1.5", "fastq": "^1.6.0" } }, "sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg=="],
 
-    "@nowarajs/error": ["@nowarajs/error@1.3.2", "", {}, "sha512-c7+BkSwmA/rs1VT67OpDCPDO64os3igdMRkpThKlNY8OzHr35Mqv8SwT5PyK4+TwjzonTJBWxdsM1bhW+0gwXA=="],
+    "@nowarajs/error": ["@nowarajs/error@1.3.8", "", {}, "sha512-rxbr5mUkkziWS2O/9GPBQ9GH7aF/hKIErgnjmId+GvmmnWt/4BGcbQkwDQEIbgEPYjRg1ZZnCZvXTyKmvLEF2g=="],
 
     "@nowarajs/kv-store": ["@nowarajs/kv-store@1.1.6", "", { "peerDependencies": { "@nowarajs/error": "^1.3.2", "ioredis": "^5.8.0" }, "optionalPeers": ["ioredis"] }, "sha512-OMEmlbaI3cWpvQMZ71VAdIUTuLz7MnNQfMRBCALOJg6Oa3rM9IuKk74Mx8HnuoZbQEGoMIxpnPD5cAHpv98uHA=="],
 
