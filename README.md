@@ -8,6 +8,11 @@
 	- [✨ Features](#-features)
 	- [🔧 Installation](#-installation)
 	- [⚙️ Usage](#-usage)
+		- [Basic Setup (In-Memory Store)](#basic-setup-in-memory-store)
+		- [Cache Configuration](#cache-configuration)
+		- [Redis Store Setup (Production)](#redis-store-setup-production)
+		- [Route-specific Caching](#route-specific-caching)
+		- [Storage Options](#storage-options)
 	- [📊 Cache Headers](#-cache-headers)
 	- [📚 API Reference](#-api-reference)
 	- [⚖️ License](#-license)
@@ -56,7 +61,9 @@ const app = new Elysia()
 		// This response will be cached automatically
 		return await fetchUsers()
 	}, {
-		isCached: true // Enable caching for this route
+		isCached: {
+			ttl: 300  // Cache for 5 minutes
+		}
 	})
 	.listen(3000)
 ```
@@ -66,18 +73,15 @@ const app = new Elysia()
 ```ts
 import { cache } from '@nowarajs/elysia-cache'
 
+// Using in-memory store (default)
 const app = new Elysia()
-	.use(cache({
-		defaultTtl: 300,     // Cache for 5 minutes by default
-		prefix: 'api:',      // Add prefix to cache keys
-		storage: ':memory:'  // Use in-memory storage (default)
-	}))
+	.use(cache())
 ```
 
 ### Redis Store Setup (Production)
 
 ```ts
-import { IoRedisStore } from '@nowarajs/kv-store'
+import { IoRedisStore } from '@nowarajs/kv-store/ioredis' // or you can use BunRedis with /bun-redis
 import { cache } from '@nowarajs/elysia-cache'
 
 // Create Redis store instance
@@ -89,35 +93,24 @@ await redisStore.connect()
 
 // Create application with Redis-backed caching
 const app = new Elysia()
-	.use(cache({
-		storage: redisStore,
-		defaultTtl: 600
-	}))
+	.use(cache(redisStore))
 ```
 
 ### Route-specific Caching
 
 ```ts
 const app = new Elysia()
-	.use(cache({ defaultTtl: 60 }))
+	.use(cache())
 	.get('/fast', () => getData(), {
-		isCached: 30  // Cache for 30 seconds
+		isCached: { ttl: 30 }  // Cache for 30 seconds
 	})
 	.get('/slow', () => getSlowData(), {
-		isCached: 3600  // Cache for 1 hour
+		isCached: { ttl: 3600 }  // Cache for 1 hour
 	})
-	.get('/no-cache', () => getRealTimeData(), {
-		isCached: false  // Disable caching
+	.get('/prefixed', () => getData(), {
+		isCached: { ttl: 60, prefix: 'api:' }  // With custom prefix
 	})
 ```
-
-### Storage Options
-
-| Store Type | Usage | Best For |
-|------------|-------|----------|
-| Default (`:memory:`) | `cache({ defaultTtl: 60 })` | Development, single instance |
-| Explicit Memory | `cache({ storage: new MemoryStore(), ... })` | When you need store reference |
-| Redis Store | `cache({ storage: redisStore, ... })` | Production, distributed systems |
 
 ## 📊 Cache Headers
 
@@ -143,36 +136,6 @@ X-Cache: HIT
 
 ## 📚 API Reference
 
-### Cache Options
-
-```ts
-interface CacheOptions {
-	/** Default TTL in seconds (default: 60) */
-	defaultTtl?: number
-	
-	/** Cache key prefix (default: '') */
-	prefix?: string
-	
-	/** Storage backend (default: ':memory:') */
-	storage?: ':memory:' | KvStore
-}
-```
-
-### Macro: `isCached`
-
-The `isCached` macro enables caching for specific routes:
-
-```ts
-// Enable with default TTL
-{ isCached: true }
-
-// Enable with custom TTL (in seconds)
-{ isCached: 300 }
-
-// Disable caching
-{ isCached: false }
-```
-
 You can find the complete API reference documentation for `Elysia Cache` at:
 
 - [TypeDoc Documentation](https://nowarajs.github.io/elysia-cache)
@@ -183,6 +146,6 @@ Distributed under the MIT License. See [LICENSE](./LICENSE) for more information
 
 ## 📧 Contact
 
+- Mail: [nowarajs@pm.me](mailto:nowarajs@pm.me)
 - GitHub: [NowaraJS](https://github.com/NowaraJS)
-- Package: [@nowarajs/elysia-cache](https://www.npmjs.com/package/@nowarajs/elysia-cache)
 

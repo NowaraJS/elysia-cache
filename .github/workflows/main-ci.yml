@@ -1,10 +1,9 @@
 name: main-ci
-run-name: "[main-ci] Checker run for \"${{ github.head_ref || github.ref_name }}\" by \"${{ github.actor }}\""
+run-name: "[main-ci] Check \"${{ github.head_ref || github.ref_name }}\" by ${{ github.actor }}"
 
 on:
   pull_request:
-    branches:
-      - '*'
+    branches: ['*']
   workflow_dispatch:
   workflow_call:
     inputs:
@@ -13,10 +12,10 @@ on:
         required: false
         type: string
 
-# Secrets used in the workflow
-# KEY_SSH: SSH key to access the repository (used with deploy keys)
-# KEY_GPG: GPG key to sign commits or tags
-# GIT_EMAIL: Email address used for git commits
+# Required secrets:
+# - KEY_SSH: SSH key for repository access
+# - KEY_GPG: GPG key for signing commits/tags  
+# - GIT_EMAIL: Email for Git commits
 
 jobs:
   lint:

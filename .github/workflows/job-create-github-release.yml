@@ -17,6 +17,8 @@ on:
         required: true
         type: string
     secrets:
+      BUN_VERSION:
+        required: false
       KEY_SSH:
         required: true
       KEY_GPG:
@@ -27,45 +29,24 @@ on:
         required: true
     outputs:
       tag:
-        value: ${{ jobs.create-release.outputs.tag }}
+        value: ${{ jobs.release.outputs.tag }}
         description: 'The tag name of the release'
       changelog:
-        value: ${{ jobs.create-release.outputs.changelog }}
+        value: ${{ jobs.release.outputs.changelog }}
         description: 'The changelog generated for the release'
       isPrerelease:
-        value: ${{ jobs.create-release.outputs.isPrerelease }}
+        value: ${{ jobs.release.outputs.isPrerelease }}
         description: 'Indicates if the release is a prerelease or not'
 
 jobs:
-  create-release:
+  release:
     name: Create Release
     runs-on: ubuntu-latest
     outputs:
-      tag: ${{ steps.latest_tag.outputs.tag_name }}
-      changelog: ${{ steps.changelog_diff.outputs.changelog }}
+      tag: ${{ steps.tag.outputs.name }}
+      changelog: ${{ steps.changelog.outputs.content }}
       isPrerelease: ${{ inputs.isPrerelease }}
     steps:
-      - name: Verify required secrets
-        run: |
-          echo "🔍 Verifying required secrets..."
-          if [ -z "${{ secrets.KEY_SSH }}" ]; then
-            echo "❌ KEY_SSH secret is missing"
-            exit 1
-          fi
-          if [ -z "${{ secrets.KEY_GPG }}" ]; then
-            echo "❌ KEY_GPG secret is missing"
-            exit 1
-          fi
-          if [ -z "${{ secrets.GIT_EMAIL }}" ]; then
-            echo "❌ GIT_EMAIL secret is missing"
-            exit 1
-          fi
-          if [ -z "${{ secrets.GH_TOKEN }}" ]; then
-            echo "❌ GH_TOKEN secret is missing"
-            exit 1
-          fi
-          echo "✅ All required secrets are present"
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -73,36 +54,33 @@ jobs:
           fetch-depth: 0
           ssh-key: ${{ secrets.KEY_SSH }}
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Bun Project
+        uses: ./.github/actions/setup-bun-project
         with:
-          bun-version: latest
+          bun-version: ${{ secrets.BUN_VERSION || 'latest' }}
 
-      - name: Fetch tags
+      - name: Fetch Tags
         run: git fetch --tags --prune
 
-      - name: Import GPG key and Configure Git
-        run: |
-          echo "${{ secrets.KEY_GPG }}" | gpg --batch --import
-          git config --local user.signingkey "$(gpg --list-keys --with-colons | grep '^pub' | cut -d':' -f5 | head -n1)"
-          git config --local commit.gpgsign true
-          git config --local tag.gpgsign true
-          git config --local user.email "${{ secrets.GIT_EMAIL }}"
-          git config --local user.name "github-actions"
+      - name: Setup Git
+        uses: ./.github/actions/setup-git
+        with:
+          gpg-key: ${{ secrets.KEY_GPG }}
+          git-email: ${{ secrets.GIT_EMAIL }}
 
-      - name: Compute previous tag (for changelog)
-        id: prev_tag
+      - name: Get Previous Tag
+        id: prev-tag
         run: |
           LAST=$(git tag --list 'v[0-9]*' --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+' | head -n1)
-          echo "last_tag=$LAST" >> $GITHUB_OUTPUT
+          echo "name=$LAST" >> $GITHUB_OUTPUT
 
-      - name: Generate Changelog and bump version
+      - name: Generate Changelog
         run: |
-          if [ -n "${{ steps.prev_tag.outputs.last_tag }}" ]; then
+          if [ -n "${{ steps.prev-tag.outputs.name }}" ]; then
             if [ -n "${{ inputs.versionSuffix }}" ]; then
-              bunx changelogen@latest --from ${{ steps.prev_tag.outputs.last_tag }} --bump --versionSuffix "${{ inputs.versionSuffix }}" --release
+              bunx changelogen@latest --from ${{ steps.prev-tag.outputs.name }} --bump --versionSuffix "${{ inputs.versionSuffix }}" --release
             else
-              bunx changelogen@latest --from ${{ steps.prev_tag.outputs.last_tag }} --bump --release
+              bunx changelogen@latest --from ${{ steps.prev-tag.outputs.name }} --bump --release
             fi
           else
             if [ -n "${{ inputs.versionSuffix }}" ]; then
@@ -112,33 +90,31 @@ jobs:
             fi
           fi
 
-
-      - name: Sign the tag manually
+      - name: Sign Tag
         run: |
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
-          if [ -z "$LATEST_TAG" ]; then
+          TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          if [ -z "$TAG" ]; then
             echo "No tags found, skipping signing step."
             exit 0
           fi
-          echo "Signing tag: $LATEST_TAG"
-          git tag -s "$LATEST_TAG" -m "Signed Release $LATEST_TAG" --force
+          echo "Signing tag: $TAG"
+          git tag -s "$TAG" -m "Signed Release $TAG" --force
 
-
-      - name: Push generated tag
+      - name: Push Tag
         run: git push origin HEAD:${{ inputs.branch }} --tags
 
-      - name: Verify tag signature
+      - name: Verify Tag Signature
         run: |
-          LATEST_TAG=$(git describe --tags --abbrev=0)
-          git tag -v "$LATEST_TAG"
+          TAG=$(git describe --tags --abbrev=0)
+          git tag -v "$TAG"
 
-      - name: Extract latest tag
-        id: latest_tag
-        run: echo "tag_name=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
+      - name: Extract Tag
+        id: tag
+        run: echo "name=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
 
-      - name: Validate tag format
+      - name: Validate Tag Format
         run: |
-          TAG="${{ steps.latest_tag.outputs.tag_name }}"
+          TAG="${{ steps.tag.outputs.name }}"
           echo "🔍 Validating tag format: $TAG"
           if ! echo "$TAG" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+'; then
             echo "❌ Tag format is invalid: $TAG (expected format: v1.2.3)"
@@ -146,48 +122,68 @@ jobs:
           fi
           echo "✅ Tag format is valid: $TAG"
 
-      - name: Extract Changelog additions
-        id: changelog_diff
+      - name: Extract Changelog
+        id: changelog
         run: |
           PREV_COMMIT=$(git log -1 --pretty=%P | awk '{print $1}')
           git diff ${PREV_COMMIT} HEAD --unified=0 CHANGELOG.md | grep '^+' | grep -v '++' | sed 's/^+//' > temp.md
           echo "Changelog additions between previous and current commit:"
           cat temp.md
+          echo "content<<EOF" >> $GITHUB_OUTPUT
+          cat temp.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          echo "Using tag: ${{ steps.latest_tag.outputs.tag_name }}"
+          TAG="${{ steps.tag.outputs.name }}"
+          echo "Using tag: $TAG"
+          
           if [ "${{ inputs.isPrerelease }}" = "true" ]; then
-            gh release create "${{ steps.latest_tag.outputs.tag_name }}" \
-              --title "Release ${{ steps.latest_tag.outputs.tag_name }}" \
+            gh release create "$TAG" \
+              --title "Release $TAG" \
               --notes "$(cat temp.md)" \
               --prerelease \
               --latest
           else
-            gh release create "${{ steps.latest_tag.outputs.tag_name }}" \
-              --title "Release ${{ steps.latest_tag.outputs.tag_name }}" \
+            gh release create "$TAG" \
+              --title "Release $TAG" \
               --notes "$(cat temp.md)" \
               --latest
           fi
 
-      - name: Final Summary
+      - name: Summary
         run: |
-          tag="${{ steps.latest_tag.outputs.tag_name }}"
-          url="https://github.com/${{ github.repository }}/releases/tag/${{ steps.latest_tag.outputs.tag_name }}"
-          # Vérifie la signature GPG du tag
+          tag="${{ steps.tag.outputs.name }}"
+          release_url="https://github.com/${{ github.repository }}/releases/tag/$tag"
+          release_name="Release $tag"
+          
+          # Determine channel type
+          if [ "${{ inputs.isPrerelease }}" = "true" ]; then
+            channel="Prerelease"
+            status_icon="🚧"
+          else
+            channel="Stable"
+            status_icon="✅"
+          fi
+          
+          # Check GPG signature
           if git tag -v "$tag" 2>&1 | grep -q 'Good signature'; then
             signature="🔒 Signed (GPG verified)"
           else
             signature="❌ Not signed or invalid signature"
           fi
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 🚀 GitHub Release Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Tag | Release Link | Signature |" >> $GITHUB_STEP_SUMMARY
-          echo "|:----|:-------------|:----------|" >> $GITHUB_STEP_SUMMARY
-          echo "| 🏷️ $tag | [View Release]($url) | $signature |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "---" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Release created successfully." >> $GITHUB_STEP_SUMMARY
+          
+          message="$signature"
+          
+          {
+            echo ""
+            echo "## 🏷️ GitHub Release Summary"
+            echo ""
+            echo "| Release | Tag | Type | Status |"
+            echo "|:--------|:----|:-----|:------:|"
+            echo "| [$release_name]($release_url) | \`$tag\` | $channel | $status_icon |"
+            echo ""
+            echo "$message"
+          } >> $GITHUB_STEP_SUMMARY

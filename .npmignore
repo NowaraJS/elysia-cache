@@ -4,6 +4,7 @@
 .env*
 .nvmrc
 .vscode/
+.zed/
 
 # === Archives and build-related files ===
 *.tgz
@@ -29,6 +30,7 @@ bun.lock
 source/
 test/
 sandbox/
+bench/
 
 # === Core project files ===
 tsconfig.json

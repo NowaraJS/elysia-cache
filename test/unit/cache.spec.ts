@@ -1,194 +1,239 @@
 import { describe, expect, test } from 'bun:test';
+import { Elysia } from 'elysia';
+import { MemoryStore } from '@nowarajs/kv-store/memory';
 
 import { cache } from '#/cache';
 
-describe('Cache Module', () => {
-	test('should cache slow responses and serve them quickly', async () => {
-		const sleepDuration = 5000; // 5 seconds
-		const cacheTtl = 10; // 10-second TTL
+describe.concurrent('Cache Module', () => {
+	test('should return correct cache headers for cache hit', async () => {
+		const store = new MemoryStore();
+		const app = new Elysia()
+			.use(cache(store))
+			.get('/test', () => 'cached content', {
+				isCached: {
+					ttl: 10
+				}
+			});
 
-		const cachePlugin = cache({ defaultTtl: cacheTtl }).get(
-			'/slow-route',
-			() => {
-				Bun.sleepSync(sleepDuration);
-				return 'ok';
-			},
-			{ isCached: true }
-		);
-
-		// First request - should take ~5 seconds
-		const startTime1 = Date.now();
-		const response1 = await cachePlugin.handle(new Request('http://localhost/slow-route'));
-		const duration1 = Date.now() - startTime1;
-
-		expect(await response1.text()).toBe('ok');
-		expect(duration1).toBeGreaterThanOrEqual(sleepDuration);
-		expect(response1.headers.get('x-cache')).toBe('MISS');
-
-		// Second immediate request - should be instantaneous (cache hit)
-		const startTime2 = Date.now();
-		const response2 = await cachePlugin.handle(new Request('http://localhost/slow-route'));
-		const duration2 = Date.now() - startTime2;
-
-		expect(await response2.text()).toBe('ok');
-		expect(duration2).toBeLessThan(100);
-		expect(response2.headers.get('x-cache')).toBe('HIT');
-
-		// Third request - still within TTL
-		const startTime3 = Date.now();
-		const response3 = await cachePlugin.handle(new Request('http://localhost/slow-route'));
-		const duration3 = Date.now() - startTime3;
-
-		expect(await response3.text()).toBe('ok');
-		expect(duration3).toBeLessThan(100);
-		expect(response3.headers.get('x-cache')).toBe('HIT');
-	}, { timeout: 15000 });
-
-	test('should expire cache after TTL', async () => {
-		const sleepDuration = 2000; // 2 seconds
-		const cacheTtl = 3; // 3-second TTL
-
-		const cachePlugin = cache({ defaultTtl: cacheTtl }).get(
-			'/expiring-route',
-			() => {
-				Bun.sleepSync(sleepDuration);
-				return 'ok';
-			},
-			{ isCached: true }
-		);
-
-		// First request - should take ~2 seconds
-		const startTime1 = Date.now();
-		const response1 = await cachePlugin.handle(new Request('http://localhost/expiring-route'));
-		const duration1 = Date.now() - startTime1;
-
-		expect(await response1.text()).toBe('ok');
-		expect(duration1).toBeGreaterThanOrEqual(sleepDuration);
-		expect(response1.headers.get('x-cache')).toBe('MISS');
-
-		// Second immediate request - should be instantaneous (cache hit)
-		const startTime2 = Date.now();
-		const response2 = await cachePlugin.handle(new Request('http://localhost/expiring-route'));
-		const duration2 = Date.now() - startTime2;
-
-		expect(await response2.text()).toBe('ok');
-		expect(duration2).toBeLessThan(100);
-		expect(response2.headers.get('x-cache')).toBe('HIT');
-
-		// Wait for TTL to expire
-		Bun.sleepSync((cacheTtl + 1) * 1000);
-
-		// Third request - should take ~2 seconds again (cache miss)
-		const startTime3 = Date.now();
-		const response3 = await cachePlugin.handle(new Request('http://localhost/expiring-route'));
-		const duration3 = Date.now() - startTime3;
-
-		expect(await response3.text()).toBe('ok');
-		expect(duration3).toBeGreaterThanOrEqual(sleepDuration);
-		expect(response3.headers.get('x-cache')).toBe('MISS');
-	}, { timeout: 15000 });
-
-	test('should set all cache headers correctly', async () => {
-		const sleepDuration = 1000; // 1 second
-		const cacheTtl = 10; // 10-second TTL
-
-		const cachePlugin = cache({ defaultTtl: cacheTtl, prefix: 'test:' }).get(
-			'/header-route',
-			() => {
-				Bun.sleepSync(sleepDuration);
-				return 'cached content';
-			},
-			{ isCached: true }
-		);
-
-		// First request - should have MISS headers
-		const response1 = await cachePlugin.handle(new Request('http://localhost/header-route'));
+		// First request - MISS
+		const response1 = await app.handle(new Request('http://localhost/test'));
+		expect(response1.status).toBe(200);
 		expect(await response1.text()).toBe('cached content');
-
-		// Check MISS headers
 		expect(response1.headers.get('x-cache')).toBe('MISS');
-		expect(response1.headers.get('cache-control')).toBe(`max-age=${cacheTtl}, public`);
-		expect(response1.headers.get('etag')).toMatch(/^"test:.*"$/);
+		expect(response1.headers.get('cache-control')).toBe('max-age=10, public');
+		expect(response1.headers.get('etag')).toBeTruthy();
 		expect(response1.headers.get('last-modified')).toBeTruthy();
 		expect(response1.headers.get('expires')).toBeTruthy();
 
-		// Second request - should have HIT headers
-		const response2 = await cachePlugin.handle(new Request('http://localhost/header-route'));
+		// Second request - HIT
+		const response2 = await app.handle(new Request('http://localhost/test'));
+		expect(response2.status).toBe(200);
 		expect(await response2.text()).toBe('cached content');
-
-		// Check HIT headers
 		expect(response2.headers.get('x-cache')).toBe('HIT');
-		expect(response2.headers.get('cache-control')).toBe(`max-age=${cacheTtl}, public`);
-		expect(response2.headers.get('etag')).toMatch(/^"test:.*"$/);
-		expect(response2.headers.get('last-modified')).toBeTruthy();
-		expect(response2.headers.get('expires')).toBeTruthy();
+		expect(response2.headers.get('cache-control')).toBe('max-age=10, public');
+		expect(response2.headers.get('last-modified')).toBe(response1.headers.get('last-modified'));
+	});
 
-		// Verify Last-Modified is consistent between requests (same creation time)
-		expect(response1.headers.get('last-modified')).toBe(response2.headers.get('last-modified'));
-	}, { timeout: 10000 });
+	test('should cache with custom prefix', async () => {
+		const store = new MemoryStore();
+		const app = new Elysia()
+			.use(cache(store))
+			.get('/test', () => 'cached', {
+				isCached: {
+					ttl: 10,
+					prefix: 'custom:'
+				}
+			});
 
-	test('should not execute cache logic for non-cached routes', async () => {
-		const cachePlugin = cache({ defaultTtl: 10 })
-			.get('/cached', () => 'cached', { isCached: true })
-			.get('/not-cached', () => 'not cached');
+		const response1 = await app.handle(new Request('http://localhost/test'));
+		expect(response1.status).toBe(200);
+		expect(response1.headers.get('x-cache')).toBe('MISS');
+		expect(response1.headers.get('etag')).toMatch(/^"custom:.*"$/);
 
-		// Request to cached route
-		const cachedResponse = await cachePlugin.handle(new Request('http://localhost/cached'));
-		expect(await cachedResponse.text()).toBe('cached');
-		expect(cachedResponse.headers.get('x-cache')).toBe('MISS');
+		const response2 = await app.handle(new Request('http://localhost/test'));
+		expect(response2.status).toBe(200);
+		expect(response2.headers.get('x-cache')).toBe('HIT');
+		expect(response2.headers.get('etag')).toMatch(/^"custom:.*"$/);
+	});
 
-		// Request to non-cached route
-		const nonCachedResponse = await cachePlugin.handle(new Request('http://localhost/not-cached'));
-		expect(await nonCachedResponse.text()).toBe('not cached');
-		expect(nonCachedResponse.headers.get('x-cache')).toBeNull();
-		expect(nonCachedResponse.headers.get('cache-control')).toBeNull();
-	}, { timeout: 5000 });
+	test('should expire cache after TTL', async () => {
+		const store = new MemoryStore();
+		const window = 2; // 2 seconds
+		const app = new Elysia()
+			.use(cache(store))
+			.get('/test', () => 'cached', {
+				isCached: {
+					ttl: window
+				}
+			});
 
-	test('should handle query parameters in cache keys', async () => {
-		const cachePlugin = cache({ defaultTtl: 10 }).get(
-			'/query-route',
-			({ query }) => `result-${query.param}`,
-			{ isCached: true }
-		);
-
-		// First request with param=1
-		const response1 = await cachePlugin.handle(new Request('http://localhost/query-route?param=1'));
-		expect(await response1.text()).toBe('result-1');
+		// First request - MISS
+		const response1 = await app.handle(new Request('http://localhost/test'));
 		expect(response1.headers.get('x-cache')).toBe('MISS');
 
-		// Second request with param=1 (should hit cache)
-		const response2 = await cachePlugin.handle(new Request('http://localhost/query-route?param=1'));
-		expect(await response2.text()).toBe('result-1');
+		// Second request - HIT
+		const response2 = await app.handle(new Request('http://localhost/test'));
 		expect(response2.headers.get('x-cache')).toBe('HIT');
-
-		// Third request with param=2 (should miss cache)
-		const response3 = await cachePlugin.handle(new Request('http://localhost/query-route?param=2'));
-		expect(await response3.text()).toBe('result-2');
-		expect(response3.headers.get('x-cache')).toBe('MISS');
-	}, { timeout: 5000 });
-
-	test('should handle specific TTL in isCached correctly', async () => {
-		const cacheTtl = 5; // 5-second TTL
-		const cachePlugin = cache({ defaultTtl: 30 })
-			.get('/specific-ttl', () => 'cached content', { isCached: cacheTtl });
-
-		// First request - should have MISS headers
-		const response1 = await cachePlugin.handle(new Request('http://localhost/specific-ttl'));
-		expect(await response1.text()).toBe('cached content');
-
-		// Check MISS headers
-		expect(response1.headers.get('x-cache')).toBe('MISS');
-		expect(response1.headers.get('cache-control')).toBe(`max-age=${cacheTtl}, public`);
 
 		// Wait for TTL to expire
-		Bun.sleepSync((cacheTtl + 1) * 1000);
+		Bun.sleepSync((window + 1) * 1000);
 
-		// Second request - should have MISS headers again
-		const response2 = await cachePlugin.handle(new Request('http://localhost/specific-ttl'));
-		expect(await response2.text()).toBe('cached content');
+		// Third request - MISS again
+		const response3 = await app.handle(new Request('http://localhost/test'));
+		expect(response3.headers.get('x-cache')).toBe('MISS');
+	}, { timeout: 10000 });
 
-		// Check MISS headers
-		expect(response2.headers.get('x-cache')).toBe('MISS');
-		expect(response2.headers.get('cache-control')).toBe(`max-age=${cacheTtl}, public`);
+	test('should not cache routes without isCached', async () => {
+		const store = new MemoryStore();
+		const app = new Elysia()
+			.use(cache(store))
+			.get('/cached', () => 'cached', { isCached: { ttl: 10 } })
+			.get('/not-cached', () => 'not cached');
+
+		// Cached route
+		const cachedResponse = await app.handle(new Request('http://localhost/cached'));
+		expect(cachedResponse.headers.get('x-cache')).toBe('MISS');
+
+		// Non-cached route
+		const nonCachedResponse = await app.handle(new Request('http://localhost/not-cached'));
+		expect(nonCachedResponse.headers.get('x-cache')).toBeNull();
+		expect(nonCachedResponse.headers.get('cache-control')).toBeNull();
+	});
+
+	test('should handle different cache keys for different query parameters', async () => {
+		const store = new MemoryStore();
+		const app = new Elysia()
+			.use(cache(store))
+			.get('/test', () => 'result', {
+				isCached: {
+					ttl: 10
+				}
+			});
+
+		// Request with param=1
+		const response1 = await app.handle(new Request('http://localhost/test?param=1'));
+		expect(response1.headers.get('x-cache')).toBe('MISS');
+		const etag1 = response1.headers.get('etag');
+
+		// Request with param=1 again - should hit cache
+		const response2 = await app.handle(new Request('http://localhost/test?param=1'));
+		expect(response2.headers.get('x-cache')).toBe('HIT');
+		expect(response2.headers.get('etag')).toBe(etag1);
+
+		// Request with param=2 - different cache key
+		const response3 = await app.handle(new Request('http://localhost/test?param=2'));
+		expect(response3.headers.get('x-cache')).toBe('MISS');
+		expect(response3.headers.get('etag')).not.toBe(etag1);
+	});
+
+	test('should handle global cache with guard', async () => {
+		const store = new MemoryStore();
+		const app = new Elysia()
+			.use(cache(store))
+			.guard({
+				isCached: {
+					ttl: 10
+				}
+			})
+			.get('/test1', () => 'response1')
+			.get('/test2', () => 'response2');
+
+		// First request to /test1 - MISS
+		const response1 = await app.handle(new Request('http://localhost/test1'));
+		expect(response1.headers.get('x-cache')).toBe('MISS');
+
+		// Second request to /test1 - HIT
+		const response2 = await app.handle(new Request('http://localhost/test1'));
+		expect(response2.headers.get('x-cache')).toBe('HIT');
+
+		// First request to /test2 - MISS (different route)
+		const response3 = await app.handle(new Request('http://localhost/test2'));
+		expect(response3.headers.get('x-cache')).toBe('MISS');
+
+		// Second request to /test2 - HIT
+		const response4 = await app.handle(new Request('http://localhost/test2'));
+		expect(response4.headers.get('x-cache')).toBe('HIT');
+	});
+
+	test('should override global cache TTL on specific route', async () => {
+		const store = new MemoryStore();
+		const window = 2;
+		const app = new Elysia()
+			.use(cache(store))
+			.guard({
+				isCached: {
+					ttl: 10
+				}
+			})
+			.get('/global-ttl', () => 'response', { isCached: { ttl: 10 } })
+			.get('/override-ttl', () => 'response', { isCached: { ttl: window } });
+
+		// /override-ttl - MISS
+		const response1 = await app.handle(new Request('http://localhost/override-ttl'));
+		expect(response1.headers.get('x-cache')).toBe('MISS');
+		expect(response1.headers.get('cache-control')).toBe(`max-age=${window}, public`);
+
+		// /override-ttl - HIT
+		const response2 = await app.handle(new Request('http://localhost/override-ttl'));
+		expect(response2.headers.get('x-cache')).toBe('HIT');
+		expect(response2.headers.get('cache-control')).toMatch(/^max-age=\d+, public$/);
+
+		// Wait for override TTL to expire
+		Bun.sleepSync((window + 1) * 1000);
+
+		// /override-ttl - MISS again
+		const response3 = await app.handle(new Request('http://localhost/override-ttl'));
+		expect(response3.headers.get('x-cache')).toBe('MISS');
+	}, { timeout: 10000 });
+
+	test('should handle Response objects correctly', async () => {
+		const store = new MemoryStore();
+		const app = new Elysia()
+			.use(cache(store))
+			.get('/test', () => new Response('response body', { status: 200 }), {
+				isCached: {
+					ttl: 10
+				}
+			});
+
+		// First request - MISS
+		const response1 = await app.handle(new Request('http://localhost/test'));
+		expect(response1.status).toBe(200);
+		expect(await response1.text()).toBe('response body');
+		expect(response1.headers.get('x-cache')).toBe('MISS');
+
+		// Second request - HIT
+		const response2 = await app.handle(new Request('http://localhost/test'));
+		expect(response2.status).toBe(200);
+		expect(await response2.text()).toBe('response body');
+		expect(response2.headers.get('x-cache')).toBe('HIT');
+	});
+
+	test('should handle different HTTP methods separately', async () => {
+		const store = new MemoryStore();
+		const app = new Elysia()
+			.use(cache(store))
+			.get('/test', () => 'GET response', { isCached: { ttl: 10 } })
+			.post('/test', () => 'POST response', { isCached: { ttl: 10 } });
+
+		// GET request - MISS
+		const getResponse1 = await app.handle(new Request('http://localhost/test', { method: 'GET' }));
+		expect(await getResponse1.text()).toBe('GET response');
+		expect(getResponse1.headers.get('x-cache')).toBe('MISS');
+
+		// GET request - HIT
+		const getResponse2 = await app.handle(new Request('http://localhost/test', { method: 'GET' }));
+		expect(await getResponse2.text()).toBe('GET response');
+		expect(getResponse2.headers.get('x-cache')).toBe('HIT');
+
+		// POST request - MISS (different method)
+		const postResponse1 = await app.handle(new Request('http://localhost/test', { method: 'POST' }));
+		expect(await postResponse1.text()).toBe('POST response');
+		expect(postResponse1.headers.get('x-cache')).toBe('MISS');
+
+		// POST request - HIT
+		const postResponse2 = await app.handle(new Request('http://localhost/test', { method: 'POST' }));
+		expect(await postResponse2.text()).toBe('POST response');
+		expect(postResponse2.headers.get('x-cache')).toBe('HIT');
 	});
 });

@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 
 import { generateCacheKey } from '#/utils/generate-cache-key';
 
-describe('generateCacheKey', () => {
+describe.concurrent('generateCacheKey', () => {
 	test('should generate cache key for request with body', async () => {
 		const testBody = JSON.stringify({ test: 'data' });
 		const request = new Request('https://example.com/api/test', {
