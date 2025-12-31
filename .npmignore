@@ -1,4 +1,4 @@
-# === Configuration and system files ===
+# ————————— Configuration and system files ————————— #
 .github/
 .idea/
 .env*
@@ -6,38 +6,38 @@
 .vscode/
 .zed/
 
-# === Archives and build-related files ===
+# ————————— Archives and build-related files ————————— #
 *.tgz
 
-# === Bundler configuration files ===
+# ————————— Bundler configuration files ————————— #
 builder.ts
 
-# === Release-related files ===
+# ————————— Release-related files ————————— #
 CHANGELOG.md
 
-# === Documentation-related folders ===
+# ————————— Documentation-related folders ————————— #
 coverage/
 docs/
 
-# === Tool configuration files ===
+# ————————— Tool configuration files ————————— #
 eslint.config.js
 
-# === Dependency-related folders and files ===
+# ————————— Dependency-related folders and files ————————— #
 node_modules/
 bun.lock
 
-# === Project-specific folders ===
+# ————————— Project-specific folders ————————— #
 source/
 test/
 sandbox/
 bench/
 
-# === Core project files ===
+# ————————— Core project files ————————— #
 tsconfig.json
 tsconfig.build.json
 bunfig.toml
 
-# === Community-related files ===
+# ————————— Community-related files ————————— #
 CODE_OF_CONDUCT.md
 CONTRIBUTING.md
 SECURITY.md
