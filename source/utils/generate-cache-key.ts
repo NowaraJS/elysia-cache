@@ -2,6 +2,9 @@ import type { Request } from 'undici-types';
 
 /**
  * Calculates a hash from a readable stream using Bun's CryptoHasher
+ *
+ * @param body - The readable stream to hash
+ * @param hasher - The Bun CryptoHasher instance
  */
 const _calculateBodyHash = async (body: ReadableStream | null, hasher: Bun.CryptoHasher): Promise<void> => {
 	if (!body)
@@ -23,13 +26,15 @@ const _calculateBodyHash = async (body: ReadableStream | null, hasher: Bun.Crypt
 
 /**
  * Generates a cache key from a request
+ *
+ * @param request - The request to generate a cache key for
  */
 export const generateCacheKey = async (request: Request): Promise<string> => {
 	const { method, url, headers } = request;
 	const hasher = new Bun.CryptoHasher('sha256');
 	hasher.update(method);
 	hasher.update(url);
-	hasher.update(JSON.stringify(headers));
+	hasher.update(JSON.stringify([...headers.entries()]));
 	await _calculateBodyHash(request.body, hasher);
 	return hasher.digest('hex');
 };

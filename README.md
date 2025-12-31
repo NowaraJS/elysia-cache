@@ -12,7 +12,8 @@
 		- [Cache Configuration](#cache-configuration)
 		- [Redis Store Setup (Production)](#redis-store-setup-production)
 		- [Route-specific Caching](#route-specific-caching)
-		- [Storage Options](#storage-options)
+		- [Global Caching with Guard](#global-caching-with-guard)
+		- [Cache Options](#cache-options)
 	- [📊 Cache Headers](#-cache-headers)
 	- [📚 API Reference](#-api-reference)
 	- [⚖️ License](#-license)
@@ -43,7 +44,7 @@ bun add @nowarajs/elysia-cache
 ### Peer Dependencies
 #### Required :
 ```bash
-bun @nowarajs/error @nowarajs/kv-store elysia
+bun add @nowarajs/error @nowarajs/kv-store elysia
 ```
 
 ## ⚙️ Usage
@@ -112,9 +113,31 @@ const app = new Elysia()
 	})
 ```
 
+### Global Caching with Guard
+
+You can apply caching to multiple routes at once using Elysia's `.guard()`:
+
+```ts
+const app = new Elysia()
+	.use(cache())
+	.guard({
+		isCached: { ttl: 60 }  // Apply to all routes in this guard
+	})
+	.get('/users', () => getUsers())
+	.get('/posts', () => getPosts())
+	.get('/comments', () => getComments())
+```
+
+### Cache Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `ttl` | `number` | *required* | Time-to-live in seconds |
+| `prefix` | `string` | `''` | Cache key prefix for namespacing |
+
 ## 📊 Cache Headers
 
-The plugin automatically adds these headers to all responses:
+The plugin automatically adds these headers to cached routes (routes with `isCached` option):
 
 | Header | Description |
 |--------|-------------|
