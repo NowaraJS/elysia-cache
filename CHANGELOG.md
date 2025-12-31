@@ -1,4 +1,24 @@
 
+## v1.3.2
+
+[compare changes](https://github.com/NowaraJS/elysia-cache/compare/v1.3.1...v1.3.2)
+
+### 🧹 Refactors
+
+- **🧹:** [Refactor cache handling and improve type safety] - Updated type assertions for cacheItem to ensure proper type handling. - Simplified cacheItem metadata access by removing unnecessary type casting. - Enhanced clarity and maintainability of the cache logic. ([e41176c](https://github.com/NowaraJS/elysia-cache/commit/e41176c))
+
+### 📖 Documentation
+
+- **📖:** [Add global caching and cache options to documentation] ([6468d98](https://github.com/NowaraJS/elysia-cache/commit/6468d98))
+
+### 🧪 Tests
+
+- **🧪:** [Add type annotations for response variables in tests] Updated the cache module tests to include type annotations for response variables, enhancing type safety and code clarity. This change ensures that the response objects are explicitly typed as `Response`, improving maintainability and reducing potential type-related issues in the future. ([c20cde6](https://github.com/NowaraJS/elysia-cache/commit/c20cde6))
+
+### ❤️ Contributors
+
+- Komiriko <komiriko@pm.me>
+
 ## v1.3.1
 
 [compare changes](https://github.com/NowaraJS/elysia-cache/compare/v1.3.0...v1.3.1)
