@@ -5,6 +5,7 @@
 .nvmrc
 .vscode/
 .zed/
+AGENTS.md
 
 # ————————— Archives and build-related files ————————— #
 *.tgz
