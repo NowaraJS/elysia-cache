@@ -1,4 +1,21 @@
 
+## v1.3.1
+
+[compare changes](https://github.com/NowaraJS/elysia-cache/compare/v1.3.0...v1.3.1)
+
+### 📦 Build
+
+- **📦:** [Update dependencies in package.json] ([83c2615](https://github.com/NowaraJS/elysia-cache/commit/83c2615))
+- **📦:** [Update typescript-eslint to version 8.51.0] Updated the typescript-eslint dependency in package.json to version 8.51.0 for improved linting capabilities and compatibility with TypeScript. ([a41eb5e](https://github.com/NowaraJS/elysia-cache/commit/a41eb5e))
+
+### 🦉 Chore
+
+- **🦉:** [change comment separator] ([d003829](https://github.com/NowaraJS/elysia-cache/commit/d003829))
+
+### ❤️ Contributors
+
+- Komiriko <komiriko@pm.me>
+
 ## v1.3.0
 
 [compare changes](https://github.com/NowaraJS/elysia-cache/compare/v1.2.9...v1.3.0)
