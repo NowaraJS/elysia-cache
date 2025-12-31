@@ -15,7 +15,7 @@ export const cache = (store: KvStore = new MemoryStore()) => {
 			if (cachedRoutes.has(route)) {
 				const { ttl, prefix } = cachedRoutes.get(route) as CacheOptions;
 				const cacheKey = await generateCacheKey(request.clone());
-				const cacheItem = await store.get(`${prefix}${cacheKey}`);
+				const cacheItem = await store.get(`${prefix}${cacheKey}`) as CacheItem | undefined;
 
 				if (
 					cacheItem
@@ -23,14 +23,14 @@ export const cache = (store: KvStore = new MemoryStore()) => {
 					&& 'response' in cacheItem
 					&& 'metadata' in cacheItem
 				) {
-					const createdAt = new Date((cacheItem as CacheItem).metadata.createdAt);
+					const createdAt = new Date((cacheItem).metadata.createdAt);
 					const expiresAt = new Date(createdAt.getTime() + (ttl * 1000));
 					const now = Date.now();
 					const remaining = Math.max(0, Math.ceil((expiresAt.getTime() - now) / 1000));
 
 					set.headers['cache-control'] = `max-age=${remaining}, public`;
 					set.headers['etag'] = `"${prefix}${cacheKey}"`;
-					set.headers['last-modified'] = (cacheItem as CacheItem).metadata.createdAt;
+					set.headers['last-modified'] = (cacheItem).metadata.createdAt;
 					set.headers['expires'] = expiresAt.toUTCString();
 					set.headers['x-cache'] = 'HIT';
 					if (cacheItem.response instanceof Response)
