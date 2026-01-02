@@ -1,4 +1,16 @@
 
+## v1.3.6
+
+[compare changes](https://github.com/NowaraJS/elysia-cache/compare/v1.3.5...v1.3.6)
+
+### 🌊 Types
+
+- **🌊:** [fix type of plugin] ([c3bbe53](https://github.com/NowaraJS/elysia-cache/commit/c3bbe53))
+
+### ❤️ Contributors
+
+- Komiriko <komiriko@pm.me>
+
 ## v1.3.5
 
 [compare changes](https://github.com/NowaraJS/elysia-cache/compare/v1.3.4...v1.3.5)
