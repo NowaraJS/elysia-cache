@@ -1,6 +1,6 @@
 import { MemoryStore } from '@nowarajs/kv-store/memory';
 import type { KvStore } from '@nowarajs/kv-store/types';
-import { Elysia, type DefinitionBase, type MetadataBase, type SingletonBase } from 'elysia';
+import { Elysia } from 'elysia';
 
 import type { CacheItem } from './types/cache-item';
 import type { CacheOptions } from './types/cache-options';
@@ -79,8 +79,23 @@ export const cache = (store: KvStore = new MemoryStore()) => {
 			})
 		}) as unknown as Elysia<
 		'',
-		SingletonBase,
-		DefinitionBase,
-		MetadataBase & { macro: Partial<{ readonly isCached: CacheOptions; }>; }
+		{
+			decorator: {};
+			derive: {};
+			resolve: {};
+			store: {}
+		},
+		{
+			typebox: {};
+			error: {};
+		},
+		{
+			macro: Partial<{ readonly isCached: CacheOptions; }>;
+			macroFn: {};
+			parser: {};
+			response: {};
+			schema: {};
+			standaloneSchema: {};
+		}
 	>;
 };
