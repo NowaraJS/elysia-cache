@@ -21,8 +21,6 @@
 
 ## 📝 Description
 
-> High-performance caching plugin for Elysia.js with flexible storage backends.
-
 **Elysia Cache** provides a simple yet powerful caching system for Elysia.js applications. It supports both in-memory caching and custom storage backends through the `@nowarajs/kv-store` ecosystem, automatic cache key generation based on request parameters, TTL management, and HTTP cache headers for optimal performance and client awareness.
 
 ## ✨ Features
@@ -63,7 +61,7 @@ const app = new Elysia()
 		return await fetchUsers()
 	}, {
 		isCached: {
-			ttl: 300  // Cache for 5 minutes
+			ttl: 300 // Cache for 5 minutes
 		}
 	})
 	.listen(3000)
@@ -103,13 +101,13 @@ const app = new Elysia()
 const app = new Elysia()
 	.use(cache())
 	.get('/fast', () => getData(), {
-		isCached: { ttl: 30 }  // Cache for 30 seconds
+		isCached: { ttl: 30 } // Cache for 30 seconds
 	})
 	.get('/slow', () => getSlowData(), {
-		isCached: { ttl: 3600 }  // Cache for 1 hour
+		isCached: { ttl: 3600 } // Cache for 1 hour
 	})
 	.get('/prefixed', () => getData(), {
-		isCached: { ttl: 60, prefix: 'api:' }  // With custom prefix
+		isCached: { ttl: 60, prefix: 'api:' } // With custom prefix
 	})
 ```
 
@@ -121,7 +119,7 @@ You can apply caching to multiple routes at once using Elysia's `.guard()`:
 const app = new Elysia()
 	.use(cache())
 	.guard({
-		isCached: { ttl: 60 }  // Apply to all routes in this guard
+		isCached: { ttl: 60 } // Apply to all routes in this guard
 	})
 	.get('/users', () => getUsers())
 	.get('/posts', () => getPosts())
@@ -161,7 +159,7 @@ X-Cache: HIT
 
 You can find the complete API reference documentation for `Elysia Cache` at:
 
-- [TypeDoc Documentation](https://nowarajs.github.io/elysia-cache)
+- [Reference Documentation](https://nowarajs.github.io/elysia-cache)
 
 ## ⚖️ License
 
