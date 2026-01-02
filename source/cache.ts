@@ -6,6 +6,15 @@ import type { CacheItem } from './types/cache-item';
 import type { CacheOptions } from './types/cache-options';
 import { generateCacheKey } from './utils/generate-cache-key';
 
+/**
+ * Response caching plugin for Elysia applications.
+ *
+ * Caches responses per route with configurable TTL. Adds standard cache headers
+ * (`Cache-Control`, `ETag`, `Last-Modified`, `Expires`, `X-Cache`).
+ *
+ * @param store - KV store for caching. Defaults to in-memory.
+ * @returns Elysia plugin with `isCached` macro
+ */
 export const cache = (store: KvStore = new MemoryStore()) => {
 	const cachedRoutes = new Map<string, CacheOptions>();
 
