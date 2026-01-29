@@ -15,35 +15,58 @@ import { generateCacheKey } from './utils/generate-cache-key';
  * @param store - KV store for caching. Defaults to in-memory.
  * @returns Elysia plugin with `isCached` macro
  */
-export const cache = (store: KvStore = new MemoryStore()) => {
+export const cache = (
+	store: KvStore = new MemoryStore()
+): Elysia<
+	'',
+	{
+		decorator: {};
+		derive: {};
+		resolve: {};
+		store: {};
+	},
+	{
+		typebox: {};
+		error: {};
+	},
+	{
+		macro: Partial<{ readonly isCached: CacheOptions }>;
+		macroFn: {};
+		parser: {};
+		response: {};
+		schema: {};
+		standaloneSchema: {};
+	}
+> => {
 	const cachedRoutes = new Map<string, CacheOptions>();
 
 	return new Elysia()
 		.onRequest(async ({ request, set }) => {
-			const route = `${request.method}:${(new URL(request.url)).pathname}`;
+			const route = `${request.method}:${new URL(request.url).pathname}`;
 			if (cachedRoutes.has(route)) {
 				const { ttl, prefix } = cachedRoutes.get(route) as CacheOptions;
 				const cacheKey = await generateCacheKey(request.clone());
-				const cacheItem = await store.get(`${prefix}${cacheKey}`) as CacheItem | undefined;
+				const cacheItem = (await store.get(`${prefix}${cacheKey}`)) as
+					| CacheItem
+					| undefined;
 
 				if (
-					cacheItem
-					&& typeof cacheItem === 'object'
-					&& 'response' in cacheItem
-					&& 'metadata' in cacheItem
+					cacheItem &&
+					typeof cacheItem === 'object' &&
+					'response' in cacheItem &&
+					'metadata' in cacheItem
 				) {
-					const createdAt = new Date((cacheItem).metadata.createdAt);
-					const expiresAt = new Date(createdAt.getTime() + (ttl * 1000));
+					const createdAt = new Date(cacheItem.metadata.createdAt);
+					const expiresAt = new Date(createdAt.getTime() + ttl * 1000);
 					const now = Date.now();
 					const remaining = Math.max(0, Math.ceil((expiresAt.getTime() - now) / 1000));
 
 					set.headers['cache-control'] = `max-age=${remaining}, public`;
 					set.headers['etag'] = `"${prefix}${cacheKey}"`;
-					set.headers['last-modified'] = (cacheItem).metadata.createdAt;
+					set.headers['last-modified'] = cacheItem.metadata.createdAt;
 					set.headers['expires'] = expiresAt.toUTCString();
 					set.headers['x-cache'] = 'HIT';
-					if (cacheItem.response instanceof Response)
-						return cacheItem.response.clone();
+					if (cacheItem.response instanceof Response) return cacheItem.response.clone();
 					return cacheItem.response;
 				}
 				set.headers['x-cache'] = 'MISS';
@@ -52,23 +75,23 @@ export const cache = (store: KvStore = new MemoryStore()) => {
 		})
 		.macro({
 			isCached: ({ ttl, prefix = '' }: CacheOptions) => ({
-				async afterHandle({ set, responseValue, request }) {
-					const route = `${request.method}:${(new URL(request.url)).pathname}`;
-					if (!cachedRoutes.has(route))
-						cachedRoutes.set(route, { ttl, prefix });
+				async afterHandle({ set, responseValue, request }): Promise<void> {
+					const route = `${request.method}:${new URL(request.url).pathname}`;
+					if (!cachedRoutes.has(route)) cachedRoutes.set(route, { ttl, prefix });
 
 					const cacheKey = await generateCacheKey(request.clone());
 					const now = new Date();
 					set.headers['cache-control'] = `max-age=${ttl}, public`;
 					set.headers['etag'] = `"${prefix}${cacheKey}"`;
 					set.headers['last-modified'] = now.toUTCString();
-					set.headers['expires'] = new Date(now.getTime() + (ttl * 1000)).toUTCString();
+					set.headers['expires'] = new Date(now.getTime() + ttl * 1000).toUTCString();
 					set.headers['x-cache'] = 'MISS';
 
 					const cacheItem: CacheItem = {
-						response: responseValue instanceof Response
-							? responseValue.clone()
-							: responseValue,
+						response:
+							responseValue instanceof Response
+								? responseValue.clone()
+								: responseValue,
 						metadata: {
 							createdAt: now.toUTCString()
 						}
@@ -83,14 +106,14 @@ export const cache = (store: KvStore = new MemoryStore()) => {
 			decorator: {};
 			derive: {};
 			resolve: {};
-			store: {}
+			store: {};
 		},
 		{
 			typebox: {};
 			error: {};
 		},
 		{
-			macro: Partial<{ readonly isCached: CacheOptions; }>;
+			macro: Partial<{ readonly isCached: CacheOptions }>;
 			macroFn: {};
 			parser: {};
 			response: {};

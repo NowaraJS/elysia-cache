@@ -6,18 +6,18 @@ import type { Request } from 'undici-types';
  * @param body - The readable stream to hash
  * @param hasher - The Bun CryptoHasher instance
  */
-const _calculateBodyHash = async (body: ReadableStream | null, hasher: Bun.CryptoHasher): Promise<void> => {
-	if (!body)
-		return;
+const _calculateBodyHash = async (
+	body: ReadableStream<unknown> | null,
+	hasher: Bun.CryptoHasher
+): Promise<void> => {
+	if (!body) return;
 	const reader = body.getReader();
 
 	try {
 		while (true) {
 			const { done, value } = await reader.read();
-			if (done)
-				break;
-			if (value)
-				hasher.update(new Uint8Array(value));
+			if (done) break;
+			if (value) hasher.update(value as Uint8Array);
 		}
 	} finally {
 		reader.releaseLock();

@@ -3,21 +3,21 @@
 ## 📌 Table of Contents
 
 - [💾 NowaraJS - Elysia Cache](#-nowarajs---elysia-cache)
-	- [📌 Table of Contents](#-table-of-contents)
-	- [📝 Description](#-description)
-	- [✨ Features](#-features)
-	- [🔧 Installation](#-installation)
-	- [⚙️ Usage](#-usage)
-		- [Basic Setup (In-Memory Store)](#basic-setup-in-memory-store)
-		- [Cache Configuration](#cache-configuration)
-		- [Redis Store Setup (Production)](#redis-store-setup-production)
-		- [Route-specific Caching](#route-specific-caching)
-		- [Global Caching with Guard](#global-caching-with-guard)
-		- [Cache Options](#cache-options)
-	- [📊 Cache Headers](#-cache-headers)
-	- [📚 API Reference](#-api-reference)
-	- [⚖️ License](#-license)
-	- [📧 Contact](#-contact)
+    - [📌 Table of Contents](#-table-of-contents)
+    - [📝 Description](#-description)
+    - [✨ Features](#-features)
+    - [🔧 Installation](#-installation)
+    - [⚙️ Usage](#-usage)
+        - [Basic Setup (In-Memory Store)](#basic-setup-in-memory-store)
+        - [Cache Configuration](#cache-configuration)
+        - [Redis Store Setup (Production)](#redis-store-setup-production)
+        - [Route-specific Caching](#route-specific-caching)
+        - [Global Caching with Guard](#global-caching-with-guard)
+        - [Cache Options](#cache-options)
+    - [📊 Cache Headers](#-cache-headers)
+    - [📚 API Reference](#-api-reference)
+    - [⚖️ License](#-license)
+    - [📧 Contact](#-contact)
 
 ## 📝 Description
 
@@ -39,8 +39,11 @@
 ```bash
 bun add @nowarajs/elysia-cache
 ```
+
 ### Peer Dependencies
+
 #### Required :
+
 ```bash
 bun add @nowarajs/error @nowarajs/kv-store elysia
 ```
@@ -50,49 +53,51 @@ bun add @nowarajs/error @nowarajs/kv-store elysia
 ### Basic Setup (In-Memory Store)
 
 ```ts
-import { Elysia } from 'elysia'
-import { cache } from '@nowarajs/elysia-cache'
+import { Elysia } from 'elysia';
+import { cache } from '@nowarajs/elysia-cache';
 
 // Create application with caching (uses in-memory store by default)
 const app = new Elysia()
 	.use(cache())
-	.get('/users', async () => {
-		// This response will be cached automatically
-		return await fetchUsers()
-	}, {
-		isCached: {
-			ttl: 300 // Cache for 5 minutes
+	.get(
+		'/users',
+		async () => {
+			// This response will be cached automatically
+			return await fetchUsers();
+		},
+		{
+			isCached: {
+				ttl: 300 // Cache for 5 minutes
+			}
 		}
-	})
-	.listen(3000)
+	)
+	.listen(3000);
 ```
 
 ### Cache Configuration
 
 ```ts
-import { cache } from '@nowarajs/elysia-cache'
+import { cache } from '@nowarajs/elysia-cache';
 
 // Using in-memory store (default)
-const app = new Elysia()
-	.use(cache())
+const app = new Elysia().use(cache());
 ```
 
 ### Redis Store Setup (Production)
 
 ```ts
-import { IoRedisStore } from '@nowarajs/kv-store/ioredis' // or you can use BunRedis with /bun-redis
-import { cache } from '@nowarajs/elysia-cache'
+import { IoRedisStore } from '@nowarajs/kv-store/ioredis'; // or you can use BunRedis with /bun-redis
+import { cache } from '@nowarajs/elysia-cache';
 
 // Create Redis store instance
 const redisStore = new IoRedisStore({
 	host: 'localhost',
 	port: 6379
-})
-await redisStore.connect()
+});
+await redisStore.connect();
 
 // Create application with Redis-backed caching
-const app = new Elysia()
-	.use(cache(redisStore))
+const app = new Elysia().use(cache(redisStore));
 ```
 
 ### Route-specific Caching
@@ -108,7 +113,7 @@ const app = new Elysia()
 	})
 	.get('/prefixed', () => getData(), {
 		isCached: { ttl: 60, prefix: 'api:' } // With custom prefix
-	})
+	});
 ```
 
 ### Global Caching with Guard
@@ -123,27 +128,27 @@ const app = new Elysia()
 	})
 	.get('/users', () => getUsers())
 	.get('/posts', () => getPosts())
-	.get('/comments', () => getComments())
+	.get('/comments', () => getComments());
 ```
 
 ### Cache Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `ttl` | `number` | *required* | Time-to-live in seconds |
-| `prefix` | `string` | `''` | Cache key prefix for namespacing |
+| Option   | Type     | Default    | Description                      |
+| -------- | -------- | ---------- | -------------------------------- |
+| `ttl`    | `number` | _required_ | Time-to-live in seconds          |
+| `prefix` | `string` | `''`       | Cache key prefix for namespacing |
 
 ## 📊 Cache Headers
 
 The plugin automatically adds these headers to cached routes (routes with `isCached` option):
 
-| Header | Description |
-|--------|-------------|
-| `Cache-Control` | Controls caching behavior (e.g., `max-age=300, public`) |
-| `ETag` | Entity tag for cache validation |
-| `Last-Modified` | Last modification timestamp |
-| `Expires` | Expiration date and time |
-| `X-Cache` | Cache status: `HIT` (from cache) or `MISS` (fresh response) |
+| Header          | Description                                                 |
+| --------------- | ----------------------------------------------------------- |
+| `Cache-Control` | Controls caching behavior (e.g., `max-age=300, public`)     |
+| `ETag`          | Entity tag for cache validation                             |
+| `Last-Modified` | Last modification timestamp                                 |
+| `Expires`       | Expiration date and time                                    |
+| `X-Cache`       | Cache status: `HIT` (from cache) or `MISS` (fresh response) |
 
 ### Example Response Headers
 
@@ -169,4 +174,3 @@ Distributed under the MIT License. See [LICENSE](./LICENSE) for more information
 
 - Mail: [nowarajs@pm.me](mailto:nowarajs@pm.me)
 - GitHub: [NowaraJS](https://github.com/NowaraJS)
-
