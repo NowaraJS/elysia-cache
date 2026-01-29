@@ -5,8 +5,6 @@
 .nvmrc
 .vscode/
 .zed/
-AGENTS.md
-
 # ————————— Archives and build-related files ————————— #
 *.tgz
 
@@ -21,7 +19,8 @@ coverage/
 docs/
 
 # ————————— Tool configuration files ————————— #
-eslint.config.js
+.oxfmtrc.json
+.oxlintrc.json
 
 # ————————— Dependency-related folders and files ————————— #
 node_modules/

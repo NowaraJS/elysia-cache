@@ -1,0 +1,8 @@
+{
+  "ignorePatterns": [],
+  "printWidth": 100,
+  "singleQuote": true,
+  "useTabs": true,
+  "tabWidth": 4,
+  "trailingComma": "none"
+}
