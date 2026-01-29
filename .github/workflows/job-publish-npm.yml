@@ -17,8 +17,6 @@ on:
         required: false
       KEY_SSH:
         required: true
-      NPM_TOKEN:
-        required: true
 
 jobs:
   publish:
@@ -37,6 +35,12 @@ jobs:
         with:
           bun-version: ${{ secrets.BUN_VERSION || 'latest' }}
 
+      - name: Setup Node.js for npm publish
+        uses: actions/setup-node@v6
+        with:
+          node-version: 'latest'
+          registry-url: 'https://registry.npmjs.org'
+
       - name: Build
         run: bun run build
 
@@ -45,12 +49,10 @@ jobs:
 
       - name: Publish to NPM
         id: publish
-        env:
-          NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           version=$(jq -r .version package.json)
           name=$(jq -r .name package.json)
-          if bun publish --access public --tag ${{ inputs.npmTag }}; then
+          if npm publish --access public --tag ${{ inputs.npmTag }} --provenance; then
             echo "status=success" >> $GITHUB_OUTPUT
             echo "version=$version" >> $GITHUB_OUTPUT
             echo "name=$name" >> $GITHUB_OUTPUT

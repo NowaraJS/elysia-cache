@@ -5,7 +5,7 @@ on:
   workflow_call:
     inputs:
       branch:
-        description: 'Branch to checkout'
+        description: "Branch to checkout"
         required: true
         type: string
     secrets:
@@ -38,14 +38,15 @@ jobs:
       - name: Run Lint
         id: lint
         run: |
-          if bun run lint; then
+          if bun run lint:github; then
             echo "status=clean" >> $GITHUB_OUTPUT
           else
-            bun run fix-lint
-            if bun run lint; then
+            bun run lint:fix
+            if bun run lint:github; then
               echo "status=fixed" >> $GITHUB_OUTPUT
             else
               echo "status=failed" >> $GITHUB_OUTPUT
+              exit 1
             fi
           fi
 
